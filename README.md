@@ -47,7 +47,7 @@ Donations are used to cover the costs of running the project, including server c
 ## Prerequisites
 
 ### Local Only Mode Requirements
-
+- Microsoft Visual Studio 2022 /w C++ Build Tools
 - Python 3.10
 - Node.js v16 or higher
 - Package manager: npm or pnpm
