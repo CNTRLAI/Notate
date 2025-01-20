@@ -133,7 +133,7 @@ export default function LLMPanel() {
         return <Openrouter />;
       case "Azure Open AI":
         return <AzureOpenAI />;
-      case "Custom":
+      case "custom":
         return <CustomLLM />;
       default:
         return null;
@@ -173,7 +173,9 @@ export default function LLMPanel() {
                   setSelectedProvider("custom" as LLMProvider);
                   setApiKeyInput("");
                 }}
-                variant={selectedProvider === "custom" ? "default" : "outline"}
+                variant={
+                  selectedProvider === "custom" ? "secondary" : "outline"
+                }
                 className={`btn-provider ${
                   selectedProvider === "custom" ? "selected" : ""
                 }`}
