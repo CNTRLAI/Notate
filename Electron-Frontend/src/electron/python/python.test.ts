@@ -129,11 +129,11 @@ test("extracts backend in production mode when needed", async () => {
     recursive: true,
   });
   expect(fs.copyFileSync).toHaveBeenCalledWith(
-    "/mock/app/path/Backend/main.py",
+    "/mock/app/path/Python-Backend/main.py",
     "/mock/temp/notate-backend/main.py"
   );
   expect(fs.copyFileSync).toHaveBeenCalledWith(
-    "/mock/app/path/Backend/requirements.txt",
+    "/mock/app/path/Python-Backend/requirements.txt",
     "/mock/temp/notate-backend/requirements.txt"
   );
 });

@@ -30,13 +30,13 @@ export async function startPythonServer() {
   let backendPath;
   if (isDev()) {
     // In dev mode, Backend is one level up from the Frontend directory
-    backendPath = path.join(appPath, "..", "Backend");
+    backendPath = path.join(appPath, "..", "Python-Backend");
     log.info(`Dev mode: Backend path set to ${backendPath}`);
   } else {
     // In production, try both "Backend" and "backend" paths
     const backendPaths = [
-      path.join(process.resourcesPath, "Backend"),
-      path.join(process.resourcesPath, "backend"),
+      path.join(process.resourcesPath, "Python-Backend"),
+      path.join(process.resourcesPath, "python-backend"),
     ];
 
     for (const testPath of backendPaths) {
@@ -53,8 +53,8 @@ export async function startPythonServer() {
 
       // Try both capitalization variants in ASAR
       const asarBackendPaths = [
-        path.join(appPath, "Backend"),
-        path.join(appPath, "backend"),
+        path.join(appPath, "Python-Backend"),
+        path.join(appPath, "python-backend"),
       ];
 
       let asarBackendPath;

@@ -200,6 +200,7 @@ export const ChatInput = memo(function ChatInput() {
         <div className="absolute right-14 bottom-12 z-50">
           {userTools.map((tool) => (
             <Button
+              type="button"
               key={tool.id}
               size="icon"
               variant={tool.enabled === 1 ? "secondary" : "outline"}

@@ -8,8 +8,8 @@
             "to": "assets"
         },
         {
-            "from": "../Backend",
-            "to": "Backend",
+            "from": "../Python-Backend",
+            "to": "Python-Backend",
             "filter": [
                 "**/*",
                 "!**/__pycache__",
@@ -26,7 +26,7 @@
         }
     ],
     "asarUnpack": [
-        "Backend",
+        "Python-Backend",
         "ffmpeg",
         "ffmpeg.exe"
     ],
@@ -47,7 +47,9 @@
             "portable",
             {
                 "target": "nsis",
-                "arch": ["x64"]
+                "arch": [
+                    "x64"
+                ]
             }
         ]
     },

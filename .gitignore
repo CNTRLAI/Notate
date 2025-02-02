@@ -5,15 +5,15 @@ __pycache__/
 
 .venv
 
-/Frontend/node_modules
-/Frontend/dist
+/Electron-Frontend/node_modules
+/Electron-Frontend/dist
 
 .env.local
 
 database.sqlite
 
-Backend/venv
-Backend/venvs
+Python-Backend/venv
+Python-Backend/venvs
 models/*
 
 .DS_Store
@@ -27,10 +27,10 @@ FileCollections
 .dev.secret
 
 VectorStores/*
-Frontend/chroma_db/chroma.sqlite3
+Electron-Frontend/chroma_db/chroma.sqlite3
 
 monitor_resources.ps1
 
-Frontend/models/*
-Backend/models/*
+Electron-Frontend/models/*
+Python-Backend/models/*
 test_curl.txt
