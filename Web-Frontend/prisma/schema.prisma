@@ -1,0 +1,207 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../Database/database.db"
+}
+
+model users {
+  id                  Int                   @id @default(autoincrement())
+  name                String                @unique
+  created_at          DateTime?             @default(now())
+  web_user            web_user?
+  accounts            account[]
+  settings            settings[]
+  prompt              prompts[]
+  conversations       conversations[]
+  messages            messages[]
+  collections         collections[]
+  dev_api_key         dev_api_key[]
+  user_tools          user_tools[]
+  openrouter_models   openrouter_models[]
+  azure_openai_models azure_openai_models[]
+  custom_api          custom_api[]
+  api_keys            api_keys[]
+}
+
+model web_user {
+  id         Int      @id @default(autoincrement())
+  username   String
+  picture    String?
+  email      String?  @unique
+  password   String?
+  image      String?
+  user_id    Int      @unique
+  user       users    @relation(fields: [user_id], references: [id])
+  created_at DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model account {
+  id                       Int      @id @default(autoincrement())
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String?
+  access_token             String?
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?
+  session_state            String?
+  refresh_token_expires_in Int?
+  user                     users    @relation(fields: [user_id], references: [id])
+  user_id                  Int      @unique
+  created_at               DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([user_id])
+}
+
+model settings {
+  id                Int    @id @default(autoincrement())
+  user_id           Int
+  model             String
+  promptId          String
+  temperature       Float
+  maxTokens         Int
+  vectorstore       String
+  modelDirectory    String
+  modelType         String
+  modelLocation     String
+  ollamaIntegration Int    @default(0)
+  ollamaModel       String
+  baseUrl           String
+  selectedAzureId   Int
+  selectedCustomId  Int
+  cot               Int    @default(0)
+  webSearch         Int    @default(0)
+  user              users  @relation(fields: [user_id], references: [id])
+}
+
+model prompts {
+  id         Int      @id @default(autoincrement())
+  name       String
+  prompt     String
+  created_at DateTime @default(now())
+  user       users    @relation(fields: [user_id], references: [id])
+  user_id    Int
+}
+
+model conversations {
+  id         Int        @id @default(autoincrement())
+  title      String
+  created_at DateTime   @default(now())
+  user       users      @relation(fields: [user_id], references: [id])
+  user_id    Int
+  messages   messages[]
+}
+
+model messages {
+  id                Int              @id @default(autoincrement())
+  conversation_id   Int
+  user_id           Int
+  role              String
+  content           String
+  is_retrieval      Int              @default(0)
+  collection_id     Int?
+  reasoning_content String?
+  data_id           Int?
+  timestamp         DateTime         @default(now())
+  user              users            @relation(fields: [user_id], references: [id])
+  conversation      conversations    @relation(fields: [conversation_id], references: [id])
+  collection        collections?     @relation(fields: [collection_id], references: [id])
+  retrieved_data    retrieved_data[]
+}
+
+model retrieved_data {
+  id           Int      @id @default(autoincrement())
+  message_id   Int
+  data_content String
+  message      messages @relation(fields: [message_id], references: [id])
+}
+
+model collections {
+  id                    Int        @id @default(autoincrement())
+  user_id               Int
+  name                  String
+  description           String
+  is_local              Int
+  local_embedding_model String
+  type                  String
+  files                 String
+  created_at            DateTime   @default(now())
+  user                  users      @relation(fields: [user_id], references: [id])
+  messages              messages[]
+}
+
+model dev_api_key {
+  id         Int       @id @default(autoincrement())
+  name       String
+  key        String
+  expiration DateTime?
+  created_at DateTime  @default(now())
+  user       users     @relation(fields: [user_id], references: [id])
+  user_id    Int
+}
+
+model tools {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String
+  user_tools  user_tools[]
+}
+
+model user_tools {
+  id      Int   @id @default(autoincrement())
+  user_id Int
+  tool_id Int
+  docked  Int   @default(0)
+  enabled Int   @default(0)
+  user    users @relation(fields: [user_id], references: [id])
+  tool    tools @relation(fields: [tool_id], references: [id])
+}
+
+model openrouter_models {
+  id      Int    @id @default(autoincrement())
+  user_id Int
+  model   String
+  user    users  @relation(fields: [user_id], references: [id])
+}
+
+model azure_openai_models {
+  id       Int    @id @default(autoincrement())
+  user_id  Int
+  name     String
+  model    String
+  api_key  String
+  endpoint String
+  user     users  @relation(fields: [user_id], references: [id])
+}
+
+model custom_api {
+  id       Int    @id @default(autoincrement())
+  name     String
+  endpoint String
+  model    String
+  user     users  @relation(fields: [user_id], references: [id])
+  user_id  Int
+}
+
+model api_keys {
+  id         Int      @id @default(autoincrement())
+  key        String
+  provider   String
+  created_at DateTime @default(now())
+  user       users    @relation(fields: [user_id], references: [id])
+  user_id    Int
+}
