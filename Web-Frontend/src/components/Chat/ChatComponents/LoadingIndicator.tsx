@@ -1,8 +1,8 @@
+import { useUser } from "@/src/context/useUser";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
 
 export function LoadingIndicator() {
-  const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
+  const { streamingMessage } = useUser();
   return (
     <div className="flex justify-center my-4">
       <div className="flex items-center bg-secondary/50 text-secondary-foreground rounded-full px-4 py-2 shadow-md">

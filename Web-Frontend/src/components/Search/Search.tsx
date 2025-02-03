@@ -1,25 +1,91 @@
+"use client";
+
 import { SearchIcon, Search } from "lucide-react";
-import { useState, useRef } from "react";
+import { useUser } from "@/src/context/useUser";
+import { useEffect, useState, useCallback } from "react";
+import { useView } from "@/src/context/useView";
+import { Conversation } from "@/src/types/convo";
 
-// mock data
-const conversations = [
-  { id: 1, title: "Conversation 1" },
-  { id: 2, title: "Conversation 2" },
-  { id: 3, title: "Conversation 3" },
-];
+type ConversationWithTimestamp = Conversation & {
+  latestMessageTime: number;
+};
 
-export default function SearchBox() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
+export default function SearchComponent() {
+  const {
+    setActiveConversation,
+    filteredConversations,
+    isSearchOpen,
+    setIsSearchOpen,
+    searchTerm,
+    setSearchTerm,
+    searchRef,
+    conversations,
+    activeUser,
+    setMessages,
+  } = useUser();
 
-  const handleConversationClick = (conversationId: number) => {
-    console.log("Conversation clicked:", conversationId);
-  };
+  const { activeView, setActiveView } = useView();
+  const [sortedConversations, setSortedConversations] = useState<
+    ConversationWithTimestamp[]
+  >([]);
+
+  const sortConversationsByLatestMessage = useCallback(async () => {
+    if (!activeUser?.id) return;
+
+    const conversationsWithTimestamp = await Promise.all(
+      conversations.map(async (conv) => {
+        return {
+          ...conv,
+          latestMessageTime: conv.created_at ? new Date(conv.created_at).getTime() : 0,
+        };
+      })
+    );
+
+    // Sort conversations by latest message timestamp
+    const sorted = conversationsWithTimestamp.sort(
+      (a, b) => b.latestMessageTime - a.latestMessageTime
+    );
+    setSortedConversations(sorted);
+  }, [activeUser?.id, conversations]);
+
+  // Update sorted conversations whenever conversations change
+  useEffect(() => {
+    sortConversationsByLatestMessage();
+  }, [sortConversationsByLatestMessage]);
 
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
+    setSearchTerm("");
   };
+
+  const handleConversationClick = (conversationId: number) => {
+    setActiveConversation(conversationId);
+    if (activeView !== "Chat") {
+      setActiveView("Chat");
+    }
+    setIsSearchOpen(false);
+    setSearchTerm("");
+    const conversation = conversations.find(
+      (conv) => conv.id === conversationId
+    );
+    if (conversation && activeUser?.id) {
+      /*       window.electron
+        .getConversationMessagesWithData(
+          activeUser.id,
+          conversationId,
+          undefined
+        )
+        .then((result) => {
+          setMessages(result.messages);
+        }); */
+      setMessages([]);
+    }
+  };
+
+  // Use sorted conversations when no search term, otherwise use filtered
+  const displayedConversations =
+    searchTerm.trim() === "" ? sortedConversations : filteredConversations;
+
   return (
     <div className="flex justify-center items-center">
       <div
@@ -43,7 +109,7 @@ export default function SearchBox() {
             />
             {isSearchOpen && (
               <div className="absolute top-full left-0 w-full bg-secondary/90 rounded-b-[6px] max-h-60 overflow-x-hidden overflow-y-auto z-50 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-900 [&::-webkit-scrollbar-thumb]:bg-gray-700 [&::-webkit-scrollbar-thumb]:rounded">
-                {conversations.map((conv) => (
+                {displayedConversations.map((conv) => (
                   <div
                     key={conv.id}
                     className="px-2 py-1 hover:bg-secondary/50 cursor-pointer text-sm text-gray-300"

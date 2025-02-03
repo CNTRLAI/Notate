@@ -1,11 +1,12 @@
+import { useLibrary } from "@/src/context/useLibrary";
 import IngestModal from "./CollectionComponents/Ingest";
 import AddLibrary from "./CollectionComponents/AddLibrary";
 import DataStoreSelect from "./CollectionComponents/DataStoreSelect";
-import { useState } from "react";
+
 export function LibraryModal() {
-  const [showUpload, setShowUpload] = useState(false);
-  const [showAddStore, setShowAddStore] = useState(false);
-  const selectedCollection = { id: 0 };
+  const { selectedCollection, showUpload, setShowUpload, showAddStore } =
+    useLibrary();
+
   return (
     <div className="space-y-8">
       <div className="space-y-6">

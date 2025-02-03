@@ -10,12 +10,15 @@ import { unified } from "unified";
 import remarkGfm from "remark-gfm";
 import remarkFrontmatter from "remark-frontmatter";
 import { JSX } from "react";
+import { useSysSettings } from "@/src/context/useSysSettings";
+import { providerIcons } from "../../Settings/SettingsComponents/providers/providerIcons";
 const MotionAvatar = motion.create(Avatar);
 
 export function StreamingMessage({ content }: { content: string }) {
   const [parsedContent, setParsedContent] = useState<(string | JSX.Element)[]>(
     []
   );
+  const { settings } = useSysSettings();
 
   useEffect(() => {
     const renderContent = async () => {
@@ -118,10 +121,14 @@ export function StreamingMessage({ content }: { content: string }) {
             }
           >
             <motion.div className="h-full w-full flex items-center justify-center">
-              <AvatarImage
-                className="object-cover w-full h-full scale-125"
-                src="/src/assets/avatars/ai-avatar.png"
-              />
+              {settings.provider ? (
+                providerIcons[settings.provider.toLowerCase()]
+              ) : (
+                <AvatarImage
+                  className="object-cover w-full h-full scale-125"
+                  src="/src/assets/avatars/ai-avatar.png"
+                />
+              )}
             </motion.div>
           </MotionAvatar>
           <motion.div

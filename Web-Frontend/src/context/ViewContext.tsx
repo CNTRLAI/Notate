@@ -1,6 +1,9 @@
+"use client";
+
 import React, { createContext, useState } from "react";
 import { View } from "../types/view";
 import { UserViewContextType } from "../types/ContextTypes/UserViewTypes";
+
 const ViewContext = createContext<UserViewContextType | undefined>(undefined);
 
 const ViewProvider: React.FC<{ children: React.ReactNode }> = ({

@@ -1,3 +1,4 @@
+"use client";
 import React, { createContext, useRef, useState } from "react";
 import { toast } from "@/src/hooks/use-toast";
 import { SysSettingsContextType } from "@/src/types/ContextTypes/SystemSettingsTypes";

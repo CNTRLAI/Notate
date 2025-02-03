@@ -1,14 +1,32 @@
 import { Button } from "@/src/components/ui/button";
 import { Progress } from "@/src/components/ui/progress";
+import { useUser } from "@/src/context/useUser";
+import { useLibrary } from "@/src/context/useLibrary";
 import { useEffect, useState } from "react";
 
 export function IngestProgress({ truncate }: { truncate?: boolean }) {
-  const [showProgress, setShowProgress] = useState(false);
-  const [progressMessage, setProgressMessage] = useState("");
-  const [progress, setProgress] = useState(0);
+  const { activeUser } = useUser();
+  const {
+    progressMessage,
+    progress,
+    handleCancelEmbed,
+    showProgress,
+    setShowProgress,
+  } = useLibrary();
   const [localMessage, setLocalMessage] = useState(progressMessage);
   const [localProgress, setLocalProgress] = useState(progress);
-  const handleCancelWebcrawl = async () => {};
+  const handleCancelWebcrawl = async () => {
+    if (activeUser) {
+      /*       const result = await window.electron.cancelWebcrawl(activeUser.id);
+       */
+      const result = {
+        result: true,
+      };
+      if (result.result) {
+        setShowProgress(false);
+      }
+    }
+  };
   useEffect(() => {
     if (showProgress) {
       setLocalMessage(progressMessage);
@@ -40,6 +58,7 @@ export function IngestProgress({ truncate }: { truncate?: boolean }) {
             size="sm"
             onClick={() => {
               handleCancelWebcrawl();
+              handleCancelEmbed();
               setShowProgress(false);
             }}
             className="p-1 h-6"

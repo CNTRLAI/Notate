@@ -11,6 +11,8 @@ import {
 import { ChevronLeft, Cloud, Database, Settings2, X } from "lucide-react";
 import { useState } from "react";
 import { sanitizeStoreName } from "@/src/lib/utils";
+import { useUser } from "@/src/context/useUser";
+import { useLibrary } from "@/src/context/useLibrary";
 import {
   Tooltip,
   TooltipContent,
@@ -19,11 +21,11 @@ import {
 } from "@/src/components/ui/tooltip";
 import { Input } from "@/src/components/ui/input";
 import { toast } from "@/src/hooks/use-toast";
+import { useSysSettings } from "@/src/context/useSysSettings";
 import { Progress } from "@/src/components/ui/progress";
-import { User } from "next-auth";
-import { ApiKey } from "@/src/types/apiKeys";
-import { Collection } from "@/src/types/collection";
-import { Model } from "@/src/types/Models";
+import { DownloadProgressData } from "@/src/types/progress";
+import { createCollection } from "@/src/data/collections";
+import { updateSetting } from "@/src/data/settings";
 export default function AddLibrary() {
   const [newStore, setNewStore] = useState("");
   const [newStoreError, setNewStoreError] = useState<string | null>(null);
@@ -33,45 +35,54 @@ export default function AddLibrary() {
   const [localEmbeddingModel, setLocalEmbeddingModel] = useState(
     "HIT-TMG/KaLM-embedding-multilingual-mini-instruct-v1.5"
   );
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-  const [activeUser, setActiveUser] = useState<User | null>(null);
   const [customModel, setCustomModel] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [newStoreType, setNewStoreType] = useState("Notes");
   const [currentFile, setCurrentFile] = useState<string>();
   const [fileProgress, setFileProgress] = useState(0);
-  const [downloadProgress, setDownloadProgress] = useState({
-    message: "",
-    totalProgress: 0,
-  });
-  const [progressMessage, setProgressMessage] = useState("");
-  const [userCollections, setUserCollections] = useState<Collection[]>([]);
-  const [selectedCollection, setSelectedCollection] =
-    useState<Collection | null>(null);
-  const [showUpload, setShowUpload] = useState(false);
-  const [files, setFiles] = useState<string[]>([]);
+  const { activeUser, apiKeys } = useUser();
+  const { setLocalModalLoading, settings } = useSysSettings();
+  const [downloadProgress, setDownloadProgress] =
+    useState<DownloadProgressData>({
+      message: "",
+      totalProgress: 0,
+    });
+  const {
+    setUserCollections,
+    setSelectedCollection,
+    setShowUpload,
+    setShowAddStore,
+    setFiles,
+    setProgressMessage,
+    progressMessage,
+    embeddingModels,
+  } = useLibrary();
 
   const handleCancel = async () => {
     try {
-      /* const result = await window.electron.cancelDownload();
+      /*  const result = await window.electron.cancelDownload(); */
+      const result = {
+        success: true,
+      };
       if (result.success) {
         toast({
           title: "Download cancelled",
           description: "Model download was cancelled successfully",
         });
-      } */
+      }
     } catch (error) {
       console.error("Error cancelling download:", error);
     } finally {
       setIsDownloading(false);
+      setLocalModalLoading(false);
       setDownloadProgress({ message: "", totalProgress: 0 });
       setFileProgress(0);
       setProgressMessage("");
       setCurrentFile(undefined);
     }
   };
-  const [embeddingModels, setEmbeddingModels] = useState<Model[]>([]);
+
   const handleCreateCollection = async () => {
     if (!activeUser) return;
 
@@ -83,20 +94,38 @@ export default function AddLibrary() {
         "HIT-TMG/KaLM-embedding-multilingual-mini-instruct-v1.5"
       );
     }
-    /* 
-    const newCollection = (await window.electron.createCollection(
-      activeUser.id,
+
+    const newCollection = await createCollection(
+      activeUser.id.toString(),
+      isLocal,
+      localEmbeddingModel,
       cleanedStore,
       newStoreDescription,
-      newStoreType,
-      isLocal,
-      localEmbeddingModel
-    )) as unknown as Collection; */
+      newStoreType
+    );
 
+    if (newCollection.id === undefined) {
+      setNewStoreError("This name is already in use");
+      return;
+    }
+    await updateSetting(
+      {
+        ...settings,
+        vectorstore: newCollection.id.toString(),
+      },
+      activeUser.id
+    );
+
+    setUserCollections((prevCollections) => [
+      ...prevCollections,
+      newCollection,
+    ]);
+    setShowAddStore(false);
     setFiles([]);
     setNewStore("");
     setNewStoreDescription("");
     setNewStoreType("Notes");
+    setSelectedCollection(newCollection);
     setShowUpload(true);
   };
 
@@ -284,6 +313,27 @@ export default function AddLibrary() {
                         onClick={async () => {
                           if (customModel.trim()) {
                             setIsDownloading(true);
+                            try {
+                              /*    const modelsPath =
+                                await window.electron.getModelsPath();
+                              await window.electron.downloadModel({
+                                modelId: customModel.trim(),
+                                dirPath: modelsPath + "/" + customModel.trim(),
+                              });
+                              await fetchEmbeddingModels(setEmbeddingModels); */
+                              const result = {
+                                success: true,
+                              };
+                              if (result.success) {
+                                setLocalEmbeddingModel(customModel.trim());
+                                setShowCustomInput(false);
+                              }
+                            } catch (error) {
+                              console.error("Error downloading model:", error);
+                              // You might want to show an error message to the user here
+                            } finally {
+                              setIsDownloading(false);
+                            }
                           }
                         }}
                         className="w-full"
@@ -324,7 +374,15 @@ export default function AddLibrary() {
                         </p>
                       </div>
                       <Progress value={fileProgress} className="h-1" />
-                      <div className="flex justify-between text-xs text-muted-foreground"></div>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>
+                          {downloadProgress.currentSize || "0 B"} /{" "}
+                          {downloadProgress.totalSize || "0 B"}
+                        </span>
+                        {downloadProgress.speed && (
+                          <span>{downloadProgress.speed}</span>
+                        )}
+                      </div>
                     </div>
                   )}
                   <div className="space-y-1">
@@ -365,7 +423,7 @@ export default function AddLibrary() {
       <div className="flex justify-between gap-4 pt-4 border-t">
         <Button
           type="button"
-          onClick={() => {}}
+          onClick={() => setShowAddStore(false)}
           className="w-32 text-red-900"
           variant="outline"
         >

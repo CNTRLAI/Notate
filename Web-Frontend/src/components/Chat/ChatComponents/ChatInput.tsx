@@ -1,3 +1,5 @@
+"use client";
+
 import { Library } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -18,35 +20,127 @@ import { Send, X, Loader2, Mic, Globe } from "lucide-react";
 import { useState } from "react";
 import { Textarea } from "@/src/components/ui/textarea";
 import { LibraryModal } from "@/src/components/Library/LibraryModal";
+import { useUser } from "@/src/context/useUser";
+import { useChatInput } from "@/src/context/useChatInput";
+import { useLibrary } from "@/src/context/useLibrary";
+import { useSysSettings } from "@/src/context/useSysSettings";
+import { memo, useCallback, useEffect, useMemo } from "react";
+import { WebAudioRecorder } from "@/src/utils/webAudioRecorder";
 
-interface UserTool {
-  id: number;
-  name: string;
-  enabled: number;
-  docked: number;
-}
-
-export default function ChatInput() {
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+export const ChatInput = memo(function ChatInput() {
+  const { activeUser, toggleTool, userTools } = useUser();
+  const {
+    handleChatRequest,
+    cancelRequest,
+    input,
+    setInput,
+    isLoading,
+    setIsLoading,
+  } = useChatInput();
+  const { openLibrary, setOpenLibrary } = useLibrary();
   const [isRecording, setIsRecording] = useState(false);
   const [transcriptionLoading, setTranscriptionLoading] = useState(false);
-  const [openLibrary, setOpenLibrary] = useState(false);
-  const [userTools, setUserTools] = useState<UserTool[]>([]);
   const [loadingDots, setLoadingDots] = useState("");
-  const [isFFMPEGInstalled, setIsFFMPEGInstalled] = useState(false);
-  const [tooltipContent, setTooltipContent] = useState("");
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  };
+  const { isFFMPEGInstalled } = useSysSettings();
+  const audioRecorder = useMemo(() => new WebAudioRecorder(), []);
+  const { selectedCollection } = useLibrary();
 
-  const handleRecording = () => {
-    // TODO: Implement recording functionality
-  };
+  // Memoize the loading dots animation interval
+  useEffect(() => {
+    if (!transcriptionLoading) {
+      setLoadingDots("");
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLoadingDots((prev: string) => (prev === "..." ? "" : prev + "."));
+    }, 500);
+    return () => clearInterval(interval);
+  }, [transcriptionLoading]);
+
+  // Memoize the recording handler
+  const handleRecording = useCallback(async () => {
+    try {
+      if (!isRecording) {
+        await audioRecorder.startRecording();
+        setIsRecording(true);
+      } else {
+        setTranscriptionLoading(true);
+        /* const audioData = await audioRecorder.stopRecording(); */
+        setIsRecording(false);
+        if (!activeUser?.id) {
+          console.error("No active user ID found");
+          setTranscriptionLoading(false);
+          return;
+        }
+        const mockResult = {
+          success: true,
+          transcription: "This is a mock transcription",
+          error: null,
+        };
+
+        if (!mockResult.success) {
+          console.error("Failed to transcribe audio:", mockResult.error);
+          setTranscriptionLoading(false);
+          return;
+        }
+
+        if (mockResult.transcription) {
+          setInput((prev) => {
+            const newInput =
+              prev + (prev ? " " : "") + mockResult.transcription;
+            return newInput;
+          });
+        } else {
+          console.warn("No transcription in result:", mockResult);
+        }
+
+        setTranscriptionLoading(false);
+      }
+    } catch (error) {
+      console.error("Error handling recording:", error);
+      setIsRecording(false);
+      setTranscriptionLoading(false);
+    }
+  }, [isRecording, audioRecorder, activeUser?.id, setInput]);
+
+  // Memoize the tooltip content
+  const tooltipContent = useMemo(() => {
+    if (!isFFMPEGInstalled) return "Please install FFMPEG to use voice-to-text";
+    if (transcriptionLoading) return "Transcribing your audio...";
+    if (isRecording) return "Click to stop recording";
+    return "Click to start voice recording";
+  }, [isFFMPEGInstalled, transcriptionLoading, isRecording]);
+
+  // Memoize the form submit handler
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (input.trim()) {
+        console.log("handleSubmit");
+        handleChatRequest(selectedCollection?.id || undefined);
+      }
+    },
+    [input, handleChatRequest, selectedCollection?.id]
+  );
+
+  // Memoize the send button handler
+  const handleSendClick = useCallback(async () => {
+    if (isLoading) {
+      cancelRequest();
+      setIsLoading(false);
+    } else if (input.trim()) {
+      console.log("handleSendClick");
+      await handleChatRequest(selectedCollection?.id || undefined);
+    }
+  }, [
+    isLoading,
+    input,
+    cancelRequest,
+    handleChatRequest,
+    selectedCollection?.id,
+    setIsLoading,
+  ]);
 
   return (
     <div className="p-4 bg-card border-t border-secondary">
@@ -117,6 +211,14 @@ export default function ChatInput() {
               key={tool.id}
               size="icon"
               variant={tool.enabled === 1 ? "secondary" : "outline"}
+              onClick={() =>
+                toggleTool({
+                  id: tool.id,
+                  name: tool.name,
+                  enabled: tool.enabled,
+                  docked: tool.docked,
+                })
+              }
               className={`${tool.enabled === 1 ? "opacity-100" : "opacity-40"}`}
             >
               {tool.name === "Web Search" ? <Globe /> : <></>}
@@ -127,6 +229,14 @@ export default function ChatInput() {
           placeholder="Type your message here..."
           value={transcriptionLoading ? `Transcribing${loadingDots}` : input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (input.trim()) {
+                handleChatRequest(selectedCollection?.id || undefined);
+              }
+            }
+          }}
           disabled={transcriptionLoading}
           data-testid="chat-input"
           className={`z-10 max-h-[72px] min-h-[72px] flex-grow bg-background text-foreground placeholder-muted-foreground border-secondary rounded-none transition-opacity duration-200 [overflow-wrap:anywhere] ${
@@ -134,9 +244,10 @@ export default function ChatInput() {
           }`}
         />
         <Button
-          type="submit"
+          type="button"
           size="icon"
           variant={isLoading ? "destructive" : "outline"}
+          onClick={handleSendClick}
           data-testid="chat-submit"
           className="flex-shrink-0 h-[72px] w-[36px] rounded-none rounded-r-[6px]"
         >
@@ -146,4 +257,4 @@ export default function ChatInput() {
       </form>
     </div>
   );
-}
+});

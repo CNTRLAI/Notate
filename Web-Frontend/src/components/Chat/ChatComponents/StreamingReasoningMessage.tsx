@@ -10,17 +10,14 @@ import remarkGfm from "remark-gfm";
 import remarkFrontmatter from "remark-frontmatter";
 import { Button } from "@/src/components/ui/button";
 import { JSX } from "react";
-
+import { useUser } from "@/src/context/useUser";
 export const StreamingReasoningMessage = () => {
+  const { streamingMessageReasoning, agentActions } = useUser();
   const [isExpanded, setIsExpanded] = useState(false);
   const [agentActionsExpanded, setAgentActionsExpanded] = useState(false);
   const [parsedContent, setParsedContent] = useState<(string | JSX.Element)[]>(
     []
   );
-  const [streamingMessageReasoning, setStreamingMessageReasoning] = useState<
-    string | null
-  >(null);
-  const [agentActions, setAgentActions] = useState<string | null>(null);
 
   useEffect(() => {
     const renderContent = async () => {

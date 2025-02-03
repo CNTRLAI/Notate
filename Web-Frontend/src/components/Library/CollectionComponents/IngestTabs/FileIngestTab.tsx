@@ -1,12 +1,14 @@
 import { Button } from "@/src/components/ui/button";
 import { Upload, Loader2 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { IngestProgress } from "../IngestProgress";
+import { useLibrary } from "@/src/context/useLibrary";
 
 export function FileTab() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [ingesting, setIngesting] = useState(false);
+  const { setSelectedFile, selectedFile, handleUpload, ingesting } =
+    useLibrary();
+
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
@@ -43,7 +45,7 @@ export function FileTab() {
       )}
       <IngestProgress />
       <Button
-        onClick={() => {}}
+        onClick={handleUpload}
         disabled={!selectedFile || ingesting}
         className="w-full"
       >

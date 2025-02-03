@@ -6,6 +6,8 @@ import {
 } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
 import { ArrowLeft, Trash2, Upload } from "lucide-react";
+import { useEffect } from "react";
+import { useLibrary } from "@/src/context/useLibrary";
 import { FilesInCollection } from "./FIlesInCollection";
 import { FileTab } from "./IngestTabs/FileIngestTab";
 import { LinkIngestTab } from "./IngestTabs/LinkIngestTab";
@@ -16,8 +18,19 @@ export default function IngestModal({
 }: {
   setShowUpload?: (showUpload: boolean) => void;
 }) {
-  const selectedCollection = { id: 0, name: "Test Collection" };
-  const handleDeleteCollection = () => {};
+  const {
+    selectedCollection,
+    openAddToCollection,
+    loadFiles,
+    handleDeleteCollection,
+  } = useLibrary();
+
+  useEffect(() => {
+    if (openAddToCollection) {
+      loadFiles();
+    }
+  }, [openAddToCollection, loadFiles]);
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="upload" className="w-full space-y-6">

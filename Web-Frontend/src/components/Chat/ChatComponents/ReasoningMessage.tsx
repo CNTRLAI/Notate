@@ -10,6 +10,7 @@ import remarkFrontmatter from "remark-frontmatter";
 import { visit } from "unist-util-visit";
 import type { Root, Element } from "hast";
 import { JSX } from "react";
+
 // Lazy load the syntax highlighter
 const SyntaxHighlightedCode = lazy(() =>
   import("@/src/components/Chat/ChatComponents/SyntaxHightlightedCode").then(

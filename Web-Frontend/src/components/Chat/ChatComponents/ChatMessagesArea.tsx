@@ -15,13 +15,13 @@ export function ChatMessagesArea({
   resetCounter,
   bottomRef,
 }: {
-  scrollAreaRef?: React.RefObject<HTMLDivElement>;
+  scrollAreaRef?: React.RefObject<HTMLDivElement | null>;
   messages?: Message[];
   streamingMessage?: string | null;
   streamingMessageReasoning?: string | null;
   error?: string | null;
   resetCounter?: number;
-  bottomRef?: React.RefObject<HTMLDivElement>;
+  bottomRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
     <ScrollArea

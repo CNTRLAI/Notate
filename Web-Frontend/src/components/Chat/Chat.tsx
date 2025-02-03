@@ -3,19 +3,38 @@ import { ArrowDown } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 
 import { ChatMessagesArea } from "./ChatComponents/ChatMessagesArea";
-import ChatInput from "./ChatComponents/ChatInput";
+import { ChatInput } from "./ChatComponents/ChatInput";
 import { LoadingIndicator } from "./ChatComponents/LoadingIndicator";
-import { useState } from "react";
+import { useChatInput } from "@/src/context/useChatInput";
+import { useUser } from "@/src/context/useUser";
+import { useChatLogic } from "@/src/hooks/useChatLogic";
 
 export default function Chat() {
-  const [showScrollButton, setShowScrollButton] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [scrollToBottom, setScrollToBottom] = useState<() => void>(() => {});
+  const {
+    scrollAreaRef,
+    resetCounter,
+    bottomRef,
+    showScrollButton,
+    scrollToBottom,
+  } = useChatLogic();
+
+  const { streamingMessage, streamingMessageReasoning, messages, error } =
+    useUser();
+
+  const { isLoading } = useChatInput();
 
   return (
-    <div className="pt-5 h-[calc(100vh-2rem)] flex flex-col overflow-y-hidden">
+    <div className="pt-5 h-[calc(100vh-1rem)] flex flex-col">
       <div className={`flex flex-col h-full overflow-hidden relative`}>
-        <ChatMessagesArea />
+        <ChatMessagesArea
+          scrollAreaRef={scrollAreaRef}
+          messages={messages}
+          streamingMessage={streamingMessage}
+          streamingMessageReasoning={streamingMessageReasoning}
+          error={error}
+          resetCounter={resetCounter}
+          bottomRef={bottomRef}
+        />
 
         {showScrollButton && (
           <Button

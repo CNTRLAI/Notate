@@ -6,6 +6,7 @@ import {
 } from "@/src/components/ui/popover";
 import { Check, ChevronDown, Plus } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { useUser } from "@/src/context/useUser";
 import { useCallback, useEffect, useState } from "react";
 import {
   Command,
@@ -16,29 +17,57 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/src/components/ui/command";
-
+import { toast } from "@/src/hooks/use-toast";
+import { useLibrary } from "@/src/context/useLibrary";
+import { useSysSettings } from "@/src/context/useSysSettings";
+import { updateSetting } from "@/src/data/settings";
 import { Collection } from "@/src/types/collection";
 
 export default function DataStoreSelect() {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
-
+  const { activeUser } = useUser();
+  const {
+    userCollections,
+    selectedCollection,
+    setShowAddStore,
+    setSelectedCollection,
+    setShowUpload,
+    setFiles,
+  } = useLibrary();
+  const { settings } = useSysSettings();
   const handleSelectCollection = async (collection: Collection) => {
-    console.log(collection);
+    if (!activeUser) return;
+    await updateSetting(
+      {
+        ...settings,
+        vectorstore: collection.id.toString(),
+      },
+      activeUser.id
+    );
+    setSelectedCollection(collection);
+    await loadFiles();
+    setOpen(false);
+    setShowUpload(true);
+    toast({
+      title: "Collection selected",
+      description: `Selected collection: ${collection.name}`,
+    });
   };
 
   const loadFiles = useCallback(async () => {
-    console.log("loadFiles");
-  }, []);
+    if (!activeUser?.id || !activeUser?.name || !selectedCollection?.id) return;
+    /*  const fileList = await window.electron.getFilesInCollection(
+      activeUser.id,
+      selectedCollection.id
+    );
+    setFiles(fileList.files as unknown as string[]); */
+  }, [activeUser?.id, selectedCollection?.id, activeUser?.name, setFiles]);
 
   useEffect(() => {
     loadFiles();
-  }, [loadFiles]);
+  }, [selectedCollection, loadFiles]);
 
-  const selectedCollection = { id: 0, name: "Test Collection" };
-  const [showAddStore, setShowAddStore] = useState(false);
-  const userCollections: Collection[] = [];
-  const activeUser = { id: 0 };
   return (
     <div className="space-y-4">
       <div className="flex flex-col space-y-2">

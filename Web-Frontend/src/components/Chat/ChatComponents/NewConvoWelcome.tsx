@@ -1,29 +1,30 @@
 import { Button } from "@/src/components/ui/button";
-import { MessageSquare, X } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import notateLogo from "@/assets/icon/icon.png";
-
+import { useChatInput } from "@/src/context/useChatInput";
+import { useLibrary } from "@/src/context/useLibrary";
 import { docSuggestions, suggestions } from "./suggestions";
-import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Collection } from "@/src/types/collection";
+
+// Get a deterministic subset of suggestions based on the current day
+const getDateBasedSuggestions = (arr: string[], count: number) => {
+  const today = new Date();
+  const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+  const startIndex = dayOfYear % (arr.length - count);
+  return arr.slice(startIndex, startIndex + count);
+};
+
 export function NewConvoWelcome() {
-  const [selectedCollection, setSelectedCollection] =
-    useState<Collection | null>(null);
-  const [showUpload, setShowUpload] = useState(false);
+  const { handleChatRequest } = useChatInput();
+  const { selectedCollection, setSelectedCollection, setShowUpload } =
+    useLibrary();
 
-  const randomDocSuggestions = useMemo(() => {
-    const shuffled = [...docSuggestions].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 3);
-  }, []);
-
-  const randomSuggestions = useMemo(() => {
-    const shuffled = [...suggestions].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 3);
-  }, []);
+  // Get 3 suggestions that will be the same on both server and client
+  const selectedDocSuggestions = getDateBasedSuggestions(docSuggestions, 3);
+  const selectedSuggestions = getDateBasedSuggestions(suggestions, 3);
 
   const handleSuggestionClick = (suggestion: string) => {
-    console.log(suggestion);
-    // TODO: Implement suggestion click
+    handleChatRequest(selectedCollection?.id || undefined, suggestion);
   };
 
   return (
@@ -31,7 +32,13 @@ export function NewConvoWelcome() {
       <div className="space-y-6 max-w-[600px]">
         <div className="space-y-2">
           <div className=" flex items-center justify-center mx-auto my-4">
-            <Image src={notateLogo} alt="Notate Logo" className="w-12 h-12" />
+            <Image
+              src={notateLogo}
+              alt="Notate Logo"
+              className="w-12 h-12"
+              width={48}
+              height={48}
+            />
           </div>
           <h2 className="text-2xl font-bold">Welcome to Notate</h2>
           <p className="text-muted-foreground">
@@ -43,46 +50,32 @@ export function NewConvoWelcome() {
         <div className="grid gap-4">
           <div className="grid gap-2">
             {selectedCollection && (
-              <p className="text-muted-foreground ">
-                Your selected collection is
-                <span className="pl-2 font-bold text-[#ffffff]">
-                  {selectedCollection.name}
-                </span>{" "}
-                <button
-                  className="text-red-500 hover:text-red-600"
-                  onClick={() => {
-                    setSelectedCollection(null);
-                    setShowUpload(false);
-                  }}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </p>
+              <div className="grid gap-2">
+                {selectedDocSuggestions.map((suggestion) => (
+                  <Button
+                    key={suggestion}
+                    variant="outline"
+                    className="justify-start"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                  >
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    {suggestion}
+                  </Button>
+                ))}
+              </div>
             )}
             <div className="grid gap-2">
-              {selectedCollection
-                ? randomDocSuggestions.map((suggestion, i) => (
-                    <Button
-                      key={i}
-                      variant="outline"
-                      className="justify-start text-left h-auto p-4 hover:bg-accent"
-                      onClick={() => handleSuggestionClick(suggestion)}
-                    >
-                      <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
-                      {suggestion}
-                    </Button>
-                  ))
-                : randomSuggestions.map((suggestion, i) => (
-                    <Button
-                      key={i}
-                      variant="outline"
-                      className="justify-start text-left h-auto p-4 hover:bg-accent"
-                      onClick={() => handleSuggestionClick(suggestion)}
-                    >
-                      <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
-                      {suggestion}
-                    </Button>
-                  ))}
+              {selectedSuggestions.map((suggestion) => (
+                <Button
+                  key={suggestion}
+                  variant="outline"
+                  className="justify-start"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                >
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  {suggestion}
+                </Button>
+              ))}
             </div>
           </div>
         </div>

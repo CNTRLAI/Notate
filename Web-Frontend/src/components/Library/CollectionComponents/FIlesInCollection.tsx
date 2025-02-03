@@ -9,8 +9,8 @@ import {
 } from "lucide-react";
 
 import { processFiles } from "@/src/lib/utils";
+import { useLibrary } from "@/src/context/useLibrary";
 import { cn } from "@/src/lib/utils";
-import { useState } from "react";
 
 const truncateFileName = (fileName: string) => {
   if (fileName.length <= 30) return fileName;
@@ -20,8 +20,9 @@ const truncateFileName = (fileName: string) => {
 };
 
 export function FilesInCollection() {
-  const filesList = processFiles([]);
-  const [fileExpanded, setFileExpanded] = useState(false);
+  const { files, fileExpanded, setFileExpanded } = useLibrary();
+  const filesList = processFiles(files);
+
   return (
     <div className="rounded-[6px] p-4 bg-gradient-to-br from-secondary/50 via-secondary/30 to-background border">
       <div className="flex items-center justify-between mb-4">

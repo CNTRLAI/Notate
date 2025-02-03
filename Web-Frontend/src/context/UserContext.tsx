@@ -1,3 +1,4 @@
+"use client";
 import React, { createContext, useMemo } from "react";
 import { ChatInputContext, ChatInputContextType } from "./ChatInputContext";
 import { useChatManagement } from "@/src/hooks/useChatManagement";
@@ -10,7 +11,7 @@ import { User } from "../types/user";
 import { ApiKey, DevApiKey } from "../types/apiKeys";
 import { Conversation } from "../types/convo";
 import { UserPrompts } from "../types/prompts";
-
+import { getDevApiKeys } from "@/src/data/devapi";
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 const UserProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -94,8 +95,9 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchDevAPIKeys = useCallback(async () => {
     if (activeUser) {
-      /* const keys = await window.electron.getDevAPIKeys(activeUser.id);
-      setDevAPIKeys(keys.keys); */
+      const keys = await getDevApiKeys();
+      console.log(keys);
+      setDevAPIKeys(keys as DevApiKey[]);
     }
   }, [activeUser]);
 
