@@ -24,3 +24,14 @@ export const deleteApiKey = async (id: number) => {
   });
   return deletedApiKey;
 };
+
+export const updateApiKey = async (apiKey: ApiKey, user_id: number) => {
+  const updatedApiKey = await db.api_keys.update({
+    where: { id: apiKey.id },
+    data: {
+      ...apiKey,
+      user_id: user_id,
+    },
+  });
+  return updatedApiKey;
+};
