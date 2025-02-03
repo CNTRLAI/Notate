@@ -28,3 +28,6 @@ export type OllamaModel = {
 };
 
 export type OpenRouterModel = string;
+
+
+  

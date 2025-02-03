@@ -1,6 +1,6 @@
 "use client";
 import SettingsDialog from "../Settings/SettingsDialog";
-import ToolsDialog from "../Tools/Tools";
+import ToolsDialog from "../Tools/ToolsDialog";
 import SearchBox from "../Search/Search";
 import Logo from "@/assets/icon/icon.png";
 import Image from "next/image";

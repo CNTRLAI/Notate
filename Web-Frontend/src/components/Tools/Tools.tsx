@@ -10,7 +10,8 @@ import ToolboxIcon from "@/assets/toolbox/toolbox.svg";
 import EnableTools from "./ToolComponents/EnableTools";
 import AddTools from "./ToolComponents/AddTools";
 import Image from "next/image";
-export default function ToolsDialog() {
+
+export default function Tools() {
   return (
     <Tabs defaultValue="sysTools" className="h-full flex flex-col">
       <TabsList className="grid w-full grid-cols-2 rounded-none bg-muted p-1 rounded-[8px]">

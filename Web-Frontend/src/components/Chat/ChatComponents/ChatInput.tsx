@@ -17,6 +17,7 @@ import {
 import { Send, X, Loader2, Mic, Globe } from "lucide-react";
 import { useState } from "react";
 import { Textarea } from "@/src/components/ui/textarea";
+import { LibraryModal } from "@/src/components/Library/LibraryModal";
 
 interface UserTool {
   id: number;
@@ -24,8 +25,6 @@ interface UserTool {
   enabled: number;
   docked: number;
 }
-
-
 
 export default function ChatInput() {
   const [input, setInput] = useState("");
@@ -70,7 +69,7 @@ export default function ChatInput() {
                 <DialogTitle>Data Store Library</DialogTitle>
                 <DialogDescription />
               </DialogHeader>
-            
+              <LibraryModal />
             </DialogContent>
           </Dialog>
           <TooltipProvider>
