@@ -1,3 +1,70 @@
+interface ProgressData extends CustomProgressData, OllamaProgressEvent {}
+
+interface OllamaProgressEvent {
+  type: "pull" | "verify";
+  output: string;
+}
+
+type CustomProgressData = {
+  type?:
+    | "info"
+    | "progress"
+    | "start"
+    | "processing"
+    | "saved"
+    | "links"
+    | "embedding_start"
+    | "embedding_progress"
+    | "complete"
+    | "error";
+  message?: string;
+  chunk?: number;
+  totalChunks?: number;
+  percent_complete?: string;
+  est_remaining_time?: string;
+  status?: "success" | "error" | "progress";
+  current?: number;
+  total?: number;
+  url?: string;
+  count?: number;
+  current_batch?: number;
+  total_batches?: number;
+  data?: {
+    message?: string;
+    chunk?: number;
+    total_chunks?: number;
+    percent_complete?: string;
+  };
+};
+
+interface DownloadProgress {
+  type: "progress";
+  data: DownloadProgressData;
+}
+interface DownloadProgressData {
+  message: string;
+  fileName?: string;
+  fileNumber?: number;
+  totalFiles?: number;
+  fileProgress?: number;
+  totalProgress: number;
+  currentSize?: string;
+  totalSize?: string;
+  currentStep?: string;
+  speed?: string;
+}
+interface DownloadModelProgress {
+  type: "progress";
+  data: {
+    message: string;
+    fileName?: string;
+    fileNumber?: number;
+    totalFiles?: number;
+    fileProgress?: number;
+    totalProgress: number;
+  };
+}
+
 type Statistics = {
   cpuUsage: number;
   memoryUsage: number;
@@ -129,18 +196,6 @@ interface CustomModel {
   endpoint: string;
   api_key: string;
   model?: string;
-}
-
-interface DownloadModelProgress {
-  type: "progress";
-  data: {
-    message: string;
-    fileName?: string;
-    fileNumber?: number;
-    totalFiles?: number;
-    fileProgress?: number;
-    totalProgress: number;
-  };
 }
 
 interface EventPayloadMapping {
@@ -869,8 +924,6 @@ interface DataContent {
 
 type OpenRouterModel = string;
 
-interface ProgressData extends CustomProgressData, OllamaProgressEvent {}
-
 type LLMProvider =
   | "openai"
   | "anthropic"
@@ -881,11 +934,6 @@ type LLMProvider =
   | "ollama"
   | "azure open ai"
   | "custom";
-
-interface OllamaProgressEvent {
-  type: "pull" | "verify";
-  output: string;
-}
 
 interface Electron {
   on(
@@ -911,57 +959,9 @@ interface APIKey {
   expiration: string | null;
 }
 
-type CustomProgressData = {
-  type?:
-    | "info"
-    | "progress"
-    | "start"
-    | "processing"
-    | "saved"
-    | "links"
-    | "embedding_start"
-    | "embedding_progress"
-    | "complete"
-    | "error";
-  message?: string;
-  chunk?: number;
-  totalChunks?: number;
-  percent_complete?: string;
-  est_remaining_time?: string;
-  status?: "success" | "error" | "progress";
-  current?: number;
-  total?: number;
-  url?: string;
-  count?: number;
-  current_batch?: number;
-  total_batches?: number;
-  data?: {
-    message?: string;
-    chunk?: number;
-    total_chunks?: number;
-    percent_complete?: string;
-  };
-};
-
-interface DownloadProgress {
-  type: "progress";
-  data: DownloadProgressData;
-}
 interface OllamaModel {
   name: string;
   type: string;
-}
-interface DownloadProgressData {
-  message: string;
-  fileName?: string;
-  fileNumber?: number;
-  totalFiles?: number;
-  fileProgress?: number;
-  totalProgress: number;
-  currentSize?: string;
-  totalSize?: string;
-  currentStep?: string;
-  speed?: string;
 }
 
 /* Provider Response  & Chat Request Result */
