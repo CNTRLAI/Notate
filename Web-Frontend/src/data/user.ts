@@ -8,33 +8,58 @@ export const createUser = async (
   name: string,
   username: string
 ) => {
+  if (!email || !password || !name || !username) {
+    throw new Error("Missing required fields");
+  }
+
   try {
     // First create the base user
     const createdUser = await db.users.create({
       data: {
         name,
-        created_at: new Date(),
       },
     });
 
-    if (!createdUser) {
-      throw new Error("Failed to create base user");
+    try {
+      // Create the web user with the reference
+      const webUser = await db.web_user.create({
+        data: {
+          email,
+          password,
+          username,
+          user_id: createdUser.id,
+        },
+      });
+
+      return webUser;
+    } catch (webUserError) {
+      // If web user creation fails, clean up the base user
+      console.error(
+        "Error creating web user. Error details:",
+        webUserError instanceof Error
+          ? {
+              name: webUserError.name,
+              message: webUserError.message,
+            }
+          : "Unknown error"
+      );
+
+      await db.users
+        .delete({
+          where: { id: createdUser.id },
+        })
+        .catch((deleteError) => {
+          console.error("Failed to clean up base user:", deleteError);
+        });
+
+      throw webUserError;
     }
-
-    // Then create the web user with the reference
-    const webUser = await db.web_user.create({
-      data: {
-        email,
-        password,
-        username,
-        user_id: createdUser.id,
-      },
-    });
-
-    return webUser;
   } catch (e) {
-    console.error("Error creating user:", e);
-    return null;
+    console.error("Error in user creation process:", e);
+    if (e instanceof Error) {
+      throw new Error(`Failed to create user: ${e.message}`);
+    }
+    throw new Error("Failed to create user: Unknown error");
   }
 };
 

@@ -33,10 +33,12 @@ export default function Signup() {
       email: "",
       password: "",
       name: "",
+      username: "",
     },
   });
 
   async function onSubmit(values: z.infer<typeof RegisterSchema>) {
+    console.log("Submitting form with values:", values);
     setIsLoading(true);
     setError("");
     startTransition(async () => {
@@ -63,7 +65,7 @@ export default function Signup() {
     >
       <div className="max-w-md w-full p-8 rounded-lg ">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form className="space-y-4">
             <FormField
               name="name"
               control={form.control}
@@ -119,13 +121,33 @@ export default function Signup() {
                 </FormItem>
               )}
             />
-
+            <FormField
+              name="username"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder=""
+                      autoComplete="username"
+                      required
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
             <div>
               <FormError message={error} />
               <Button
                 type="submit"
                 className="w-full flex items-center justify-center"
                 disabled={isLoading}
+                onClick={() => {
+                  onSubmit(form.getValues());
+                }}
               >
                 {isLoading ? (
                   <>

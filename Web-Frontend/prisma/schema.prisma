@@ -10,13 +10,13 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:../Database/database.db"
+  url      = "file:../../Database/database.sqlite"
 }
 
 model users {
   id                  Int                   @id @default(autoincrement())
-  name                String                @unique
-  created_at          DateTime?             @default(now())
+  name                String
+  created_at          Int                   @default(dbgenerated("strftime('%s', 'now')"))
   web_user            web_user?
   accounts            account[]
   settings            settings[]
@@ -41,8 +41,8 @@ model web_user {
   image      String?
   user_id    Int      @unique
   user       users    @relation(fields: [user_id], references: [id])
-  created_at DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  created_at Int      @default(dbgenerated("strftime('%s', 'now')"))
+  updatedAt  Int      @default(dbgenerated("strftime('%s', 'now')"))
 }
 
 model account {
@@ -66,6 +66,16 @@ model account {
   @@unique([provider, providerAccountId])
   @@index([user_id])
 }
+
+
+model verificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
 
 model settings {
   id                Int    @id @default(autoincrement())

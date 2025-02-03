@@ -23,12 +23,12 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
     const inputUser = await createUser(email, hashedPassword, name, username);
 
     if (!inputUser) {
-      return { error: "Error creating user" };
+      return { error: "Failed to create user. Please try again." };
     }
 
     return { success: "User created", user: inputUser };
   } catch (error) {
-    console.error(error);
-    return { error: "Error creating user" };
+    console.error("Registration error:", error);
+    return { error: "An unexpected error occurred during registration" };
   }
 };

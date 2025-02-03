@@ -62,6 +62,7 @@ class DatabaseService {
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
 
+   
         CREATE TABLE IF NOT EXISTS openrouter_models (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           user_id INTEGER,
@@ -176,6 +177,44 @@ class DatabaseService {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
+
+        CREATE TABLE IF NOT EXISTS account (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          type TEXT NOT NULL,
+          provider TEXT NOT NULL,
+          providerAccountId TEXT NOT NULL,
+          refresh_token TEXT,
+          access_token TEXT,
+          expires_at INTEGER,
+          token_type TEXT,
+          scope TEXT,
+          id_token TEXT,
+          session_state TEXT,
+          refresh_token_expires_in INTEGER,
+          user_id INTEGER,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS verificationToken (
+          identifier TEXT PRIMARY KEY,
+          token TEXT NOT NULL,
+          expires DATETIME NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS web_user (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT NOT NULL,
+          password TEXT NOT NULL,
+          username TEXT NOT NULL,
+          picture TEXT,
+          user_id INTEGER,
+          image TEXT,
+
+          created_at BIGINT DEFAULT (strftime('%s', 'now')),
+          updatedAt BIGINT DEFAULT (strftime('%s', 'now')),
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        
       `);
       console.log("Database initialized successfully");
       this.migrateSettingsTable();
@@ -183,6 +222,7 @@ class DatabaseService {
       console.error("Error initializing database:", error);
     }
   };
+
   migrateSettingsTable = () => {
     try {
       // Define expected schema
@@ -206,7 +246,6 @@ class DatabaseService {
         { name: "cot", type: "INTEGER" },
         { name: "webSearch", type: "INTEGER" },
       ];
-
       // Get current table info
       const tableInfo = this.db
         .prepare("PRAGMA table_info(settings)")
@@ -340,6 +379,33 @@ class DatabaseService {
           "model",
           "endpoint",
           "api_key",
+        ],
+        account: [
+          "id",
+          "user_id",
+          "type",
+          "provider",
+          "providerAccountId",
+          "refresh_token",
+          "access_token",
+          "expires_at",
+          "token_type",
+          "scope",
+          "id_token",
+          "session_state",
+          "refresh_token_expires_in",
+        ],
+        verificationToken: ["identifier", "token", "expires"],
+        web_user: [
+          "id",
+          "email",
+          "password",
+          "username",
+          "user_id",
+          "picture",
+          "image",
+          "created_at",
+          "updatedAt",
         ],
         custom_api: ["id", "user_id", "name", "endpoint", "api_key", "model"],
         users: ["id", "name", "created_at"],
