@@ -1,3 +1,5 @@
+"use server";
+
 import React from "react";
 import { Model } from "../types/Models";
 

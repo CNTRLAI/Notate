@@ -1,3 +1,5 @@
+"use server";
+
 import { SystemSpecs } from "../types/sysSpecs";
 
 export const fetchSystemSpecs = async (
