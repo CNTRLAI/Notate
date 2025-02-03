@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
+import { toast } from "@/src/hooks/use-toast";
+import { useSysSettings } from "@/src/context/useSysSettings";
+import { useUser } from "@/src/context/useUser";
 import { providerIcons } from "./providers/providerIcons";
+import { defaultProviderModel } from "./providers/defaultsProviderModels";
 import LocalLLM from "./LLMModels/LocalLLM";
 import Ollama from "./LLMModels/Ollama";
 import External from "./LLMModels/External";
@@ -19,13 +23,9 @@ import {
   CommandList,
 } from "@/src/components/ui/command";
 import { Search } from "lucide-react";
-import { ApiKey } from "@/src/types/apiKeys";
-import {
-  CustomModel,
-  Model,
-  OllamaModel,
-} from "@/src/types/Models";
+import { createApiKey } from "@/src/data/apiKeys";
 import { LLMProvider } from "@/src/types/providers";
+import { updateSetting } from "@/src/data/settings";
 // Provider categories for better organization
 const providerCategories = {
   "Cloud Providers": ["openai", "anthropic", "gemini", "deepseek", "xai"],
@@ -36,14 +36,112 @@ const providerCategories = {
 export default function LLMPanel() {
   const [showUpdateInput, setShowUpdateInput] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState("");
-  const [selectedProvider, setSelectedProvider] =
-    useState<LLMProvider>("anthropic");
+  const {
+    activeUser,
+    apiKeys,
+    setApiKeys,
+    handleResetChat,
+    apiKeyInput,
+    setApiKeyInput,
+    customModels,
+  } = useUser();
+  const {
+    setSettings,
+    ollamaModels,
+    localModels,
+    selectedProvider,
+    setSelectedProvider,
+    settings,
+  } = useSysSettings();
 
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-  const [customModels, setCustomModels] = useState<CustomModel[]>([]);
-  const [ollamaModels, setOllamaModels] = useState<OllamaModel[]>([]);
-  const [localModels, setLocalModels] = useState<Model[]>([]);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedApiKey = apiKeyInput.trim();
+    /*   const result = await window.electron.keyValidation({
+      apiKey: trimmedApiKey,
+      inputProvider: selectedProvider.toLowerCase(),
+    }); */
+    const result = { error: false };
+    if (result.error) {
+      toast({
+        title: "Invalid API Key",
+        description: "API key is invalid. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    handleResetChat();
+    if (activeUser && selectedProvider) {
+      await createApiKey(
+        {
+          id: 0,
+          key: trimmedApiKey,
+          provider: selectedProvider.toLowerCase(),
+        },
+        activeUser.id
+      );
+      if (!apiKeys.some((key) => key.provider === selectedProvider)) {
+        setApiKeys((prevKeys) => [
+          ...prevKeys,
+          {
+            id: Date.now(),
+            key: trimmedApiKey,
+            provider: selectedProvider.toLowerCase(),
+          },
+        ]);
+      }
+      setShowUpdateInput(false);
+      setApiKeyInput("");
+      toast({
+        title: "API Key Saved",
+        description: `Your ${selectedProvider.toUpperCase()} API key has been saved successfully.`,
+      });
+    }
+  };
+
+  const handleProviderModelChange = async (provider: LLMProvider) => {
+    setSettings((prev) => ({
+      ...prev,
+      provider: provider,
+      model:
+        defaultProviderModel[provider as keyof typeof defaultProviderModel],
+    }));
+    try {
+      if (activeUser) {
+        await updateSetting(
+          {
+            ...settings,
+            provider: provider,
+            model:
+              defaultProviderModel[
+                provider as keyof typeof defaultProviderModel
+              ],
+          },
+          activeUser.id
+        );
+        if (provider === "openrouter") {
+          /* await window.electron.addOpenRouterModel(
+            activeUser.id,
+            "openai/gpt-3.5-turbo"
+          ); */
+        } else {
+          await updateSetting(
+            {
+              ...settings,
+              model:
+                defaultProviderModel[
+                  provider as keyof typeof defaultProviderModel
+                ],
+            },
+            activeUser.id
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error updating user settings:", error);
+    }
+  };
 
   const renderInputs = () => {
     switch (selectedProvider.toLowerCase()) {
@@ -160,6 +258,12 @@ export default function LLMPanel() {
                     variant="secondary"
                     className="w-full mt-2"
                     type="submit"
+                    onClick={(e) => {
+                      handleProviderModelChange(
+                        selectedProvider as LLMProvider
+                      );
+                      handleSubmit(e);
+                    }}
                   >
                     Save API Key
                   </Button>

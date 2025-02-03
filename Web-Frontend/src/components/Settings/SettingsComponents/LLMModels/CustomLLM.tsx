@@ -1,11 +1,55 @@
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { useState } from "react";
-
+import { useUser } from "@/src/context/useUser";
+import { toast } from "@/src/hooks/use-toast";
+import { useSysSettings } from "@/src/context/useSysSettings";
+import { updateSetting } from "@/src/data/settings";
 export default function CustomLLM() {
+  const { apiKeyInput, setApiKeyInput, activeUser } = useUser();
   const [customProvider, setCustomProvider] = useState("");
   const [customBaseUrl, setCustomBaseUrl] = useState("");
   const [customModel, setCustomModel] = useState("");
+  const { settings } = useSysSettings();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (!activeUser) return;
+      /*  const apiId = await window.electron.addCustomAPI(
+        activeUser.id,
+        customProvider,
+        customBaseUrl,
+        apiKeyInput,
+        customModel
+      ); */
+      await updateSetting(
+        {
+          ...settings,
+          provider: "custom",
+          baseUrl: customBaseUrl,
+          model: customModel,
+          isLocal: false,
+          selectedCustomId: 0,
+        },
+        activeUser.id
+      );
+      toast({
+        title: "Custom provider added",
+        description: "Your custom provider has been added",
+      });
+      setCustomProvider("");
+      setCustomBaseUrl("");
+      setApiKeyInput("");
+      setCustomModel("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          "An error occurred while adding your custom provider. Please try again." +
+          error,
+      });
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -38,8 +82,10 @@ export default function CustomLLM() {
         type="password"
         placeholder="Enter your custom API key"
         className="input-field"
+        value={apiKeyInput}
+        onChange={(e) => setApiKeyInput(e.target.value)}
       />
-      <Button variant="secondary" className="w-full">
+      <Button variant="secondary" onClick={handleSubmit} className="w-full">
         Add Custom Provider
       </Button>
     </div>

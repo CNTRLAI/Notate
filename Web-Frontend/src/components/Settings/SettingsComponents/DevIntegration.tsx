@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { useUser } from "@/src/context/useUser";
 import { useState } from "react";
 import { useClipboard } from "use-clipboard-copy";
 import {
@@ -17,16 +18,21 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/src/components/ui/dialog";
-import { User } from "next-auth";
+import { deleteDevAPIKey, createDevAPIKey } from "@/src/data/apiKeys";
 import { DevApiKey } from "@/src/types/apiKeys";
+interface APIKey {
+  id: number;
+  key: string;
+  name: string;
+  expiration: string | null;
+}
 
 export function DevIntegration() {
+  const { activeUser, devAPIKeys, setDevAPIKeys } = useUser();
   const [keyName, setKeyName] = useState("");
-  const [activeUser, setActiveUser] = useState<User | null>(null);
   const [expiration, setExpiration] = useState<string | null>(null);
   const [activeKeysMinimized, setActiveKeysMinimized] = useState(true);
   const [showKeyDialog, setShowKeyDialog] = useState(false);
-  const [devAPIKeys, setDevAPIKeys] = useState<DevApiKey[]>([]);
   const [selectedKey, setSelectedKey] = useState<{
     key: string;
     name: string;
@@ -45,26 +51,30 @@ export function DevIntegration() {
 
   const handleDeleteKey = async (id: number) => {
     if (!activeUser) return;
-    console.log(id);
-    // await window.electron.deleteDevAPIKey(activeUser.id, id);
-    // setDevAPIKeys(devAPIKeys.filter((key) => key.id !== id));
+    await deleteDevAPIKey(activeUser.id, id);
+    setDevAPIKeys(devAPIKeys.filter((key) => key.id !== id));
   };
 
   const handleGenerateKey = async () => {
     if (!activeUser) return;
-    /*    const results = await window.electron.addDevAPIKey(
+    const results = await createDevAPIKey(
+      {
+        key: keyName,
+        name: keyName,
+        expiration: expiration === "never" ? null : expiration ?? null,
+        id: 0,
+      },
       activeUser.id,
-      keyName,
-      expiration === "never" ? null : expiration
+      expiration === "never" ? null : expiration ?? null
     );
-    setDevAPIKeys([...devAPIKeys, results]);
+    setDevAPIKeys([...devAPIKeys, results as DevApiKey]);
     setSelectedKey({ key: results.key, name: keyName, isNew: true });
     setShowKeyDialog(true);
     setKeyName("");
-    setExpiration(null); */
+    setExpiration(null);
   };
 
-  const handleViewKey = (key: DevApiKey) => {
+  const handleViewKey = (key: APIKey) => {
     setSelectedKey({ key: key.key, name: key.name });
     setShowKeyDialog(true);
   };

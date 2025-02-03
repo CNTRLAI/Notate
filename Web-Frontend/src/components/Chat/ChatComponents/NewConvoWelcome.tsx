@@ -9,15 +9,17 @@ import Image from "next/image";
 // Get a deterministic subset of suggestions based on the current day
 const getDateBasedSuggestions = (arr: string[], count: number) => {
   const today = new Date();
-  const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+  const dayOfYear = Math.floor(
+    (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) /
+      (1000 * 60 * 60 * 24)
+  );
   const startIndex = dayOfYear % (arr.length - count);
   return arr.slice(startIndex, startIndex + count);
 };
 
 export function NewConvoWelcome() {
   const { handleChatRequest } = useChatInput();
-  const { selectedCollection, setSelectedCollection, setShowUpload } =
-    useLibrary();
+  const { selectedCollection } = useLibrary();
 
   // Get 3 suggestions that will be the same on both server and client
   const selectedDocSuggestions = getDateBasedSuggestions(docSuggestions, 3);

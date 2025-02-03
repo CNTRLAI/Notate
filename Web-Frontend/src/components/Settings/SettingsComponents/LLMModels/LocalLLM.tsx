@@ -6,6 +6,7 @@ import {
 } from "@/src/components/ui/tooltip";
 import { Button } from "@/src/components/ui/button";
 import { FolderOpenIcon, Loader2 } from "lucide-react";
+import { useSysSettings } from "@/src/context/useSysSettings";
 import {
   Select,
   SelectContent,
@@ -13,10 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { useState } from "react";
+import { useUser } from "@/src/context/useUser";
+import { toast } from "@/src/hooks/use-toast";
 import AddLocalModel from "./AddLocalModel";
-import { Model } from "@/src/types/Models";
-import { User } from "next-auth";
 
 const formatDirectoryPath = (path: string | null) => {
   if (!path) return "Not set";
@@ -32,11 +32,47 @@ const formatModelName = (name: string) => {
 };
 
 export default function LocalLLM() {
-  const [localModelDir, setLocalModelDir] = useState<string | null>(null);
-  const [localModels, setLocalModels] = useState<Model[]>([]);
-  const [selectedModel, setSelectedModel] = useState<Model | null>(null);
-  const [localModalLoading, setLocalModalLoading] = useState(false);
-  const [activeUser, setActiveUser] = useState<User | null>(null);
+  const { activeUser } = useUser();
+  const {
+    localModelDir,
+    localModels,
+    handleRunModel,
+    localModalLoading,
+    setSelectedModel,
+    selectedModel,
+  } = useSysSettings();
+
+  const handleSelectDirectory = async () => {
+    try {
+      if (!activeUser) return;
+      /* const dirPath = await window.electron.openDirectory();
+      if (dirPath) {
+        setLocalModelDir(dirPath);
+        await updateSetting(
+          {
+            ...settings,
+            modelDirectory: dirPath,
+          },
+          activeUser.id
+        );
+        const response = (await window.electron.getDirModels(
+          dirPath
+        )) as unknown as { dirPath: string; models: Model[] };
+        setLocalModels(response.models);
+        toast({
+          title: "Directory selected",
+          description: `Selected directory: ${dirPath}`,
+        });
+      } */
+    } catch (error) {
+      console.error("Error selecting directory:", error);
+      toast({
+        title: "Error",
+        description: "Failed to select directory",
+        variant: "destructive",
+      });
+    }
+  };
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -56,7 +92,11 @@ export default function LocalLLM() {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <Button variant="outline" className="ml-2">
+        <Button
+          onClick={handleSelectDirectory}
+          variant="outline"
+          className="ml-2"
+        >
           <FolderOpenIcon className="w-4 h-4 mr-2" />
           Select Directory
         </Button>
@@ -85,6 +125,11 @@ export default function LocalLLM() {
           variant="secondary"
           onClick={() => {
             if (!activeUser || !selectedModel) return;
+            const type = selectedModel.type;
+            const model = selectedModel.name;
+            const user_id = activeUser.id.toString();
+            const model_location = selectedModel.model_location;
+            handleRunModel(model, model_location, type, user_id);
           }}
         >
           {localModalLoading ? (

@@ -1,25 +1,22 @@
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
-import { useState } from "react";
+import { useSysSettings } from "@/src/context/useSysSettings";
+import { useUser } from "@/src/context/useUser";
+
 interface ExternalProps {
   showUpdateInput: boolean;
   setShowUpdateInput: (show: boolean) => void;
 }
-const mockApiKeys = [
-  { provider: "openai", key: "sk-1234567890" },
-  { provider: "anthropic", key: "sk-1234567890" },
-];
 
 export default function External({
   showUpdateInput,
   setShowUpdateInput,
 }: ExternalProps) {
-  const [apiKeyInput, setApiKeyInput] = useState("");
-
-  const [selectedProvider, setSelectedProvider] = useState<string>("");
+  const { selectedProvider } = useSysSettings();
+  const { apiKeyInput, setApiKeyInput, apiKeys } = useUser();
 
   const hasProviderKey = selectedProvider
-    ? mockApiKeys.some(
+    ? apiKeys.some(
         (key) => key.provider.toLowerCase() === selectedProvider.toLowerCase()
       )
     : false;

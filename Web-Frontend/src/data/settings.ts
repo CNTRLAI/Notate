@@ -64,3 +64,21 @@ export const getSettingById = async (id: number) => {
   });
   return setting;
 };
+
+export const getUserPrompts = async (user_id: number) => {
+  const prompts = await db.prompts.findMany({
+    where: { user_id },
+  });
+  return prompts;
+};
+
+export const addUserPrompt = async (
+  user_id: number,
+  name: string,
+  prompt: string
+) => {
+  const newPrompt = await db.prompts.create({
+    data: { user_id, name, prompt },
+  });
+  return newPrompt;
+};

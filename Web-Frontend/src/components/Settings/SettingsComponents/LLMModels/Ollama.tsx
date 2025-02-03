@@ -1,6 +1,7 @@
 import { Button } from "@/src/components/ui/button";
 import AddOllamaModel from "./AddOllamaModel";
-
+import { useSysSettings } from "@/src/context/useSysSettings";
+import { useUser } from "@/src/context/useUser";
 import {
   Select,
   SelectContent,
@@ -10,23 +11,60 @@ import {
 } from "@/src/components/ui/select";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { OllamaModel } from "@/src/types/Models";
-
+import { updateSetting } from "@/src/data/settings";
 export default function Ollama() {
+  const {
+    settings,
+    setSettings,
+    ollamaModels,
+    setOllamaModels,
+    handleRunOllama,
+    localModalLoading,
+    ollamaInit,
+    setOllamaInit,
+    handleOllamaIntegration,
+  } = useSysSettings();
+  const { activeUser } = useUser();
   const [selectedModel, setSelectedModel] = useState("");
   const formatModelName = (name: string) => {
     const parts = name.split("-");
     if (parts.length <= 2) return name;
     return `${parts[0]}-${parts[1]}...`;
   };
-  const [ollamaInit, setOllamaInit] = useState(false);
-  const [ollamaModels, setOllamaModels] = useState<OllamaModel[]>([]);
-  const [localModalLoading, setLocalModalLoading] = useState(false);
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Button variant={ollamaInit ? "default" : "outline"} className="w-full">
+        <Button
+          variant={ollamaInit ? "default" : "outline"}
+          className="w-full"
+          onClick={async () => {
+            if (activeUser) {
+              const newIntegrationValue =
+                settings.ollamaIntegration === 1 ? 0 : 1;
+              setSettings({
+                ...settings,
+                ollamaIntegration: newIntegrationValue,
+              });
+
+              await updateSetting(
+                {
+                  ...settings,
+                  ollamaIntegration: newIntegrationValue,
+                },
+                activeUser.id
+              );
+
+              if (newIntegrationValue === 1) {
+                await handleOllamaIntegration(activeUser);
+                setOllamaInit(true);
+              } else {
+                setOllamaModels([]);
+                setOllamaInit(false);
+              }
+            }
+          }}
+        >
           {ollamaInit ? "Ollama Integration Enabled" : "Integrate with Ollama"}
         </Button>
       </div>
@@ -49,6 +87,11 @@ export default function Ollama() {
             variant="secondary"
             disabled={!selectedModel || localModalLoading}
             className=""
+            onClick={() => {
+              if (activeUser) {
+                handleRunOllama(selectedModel, activeUser);
+              }
+            }}
           >
             {localModalLoading ? (
               <div className="flex items-center gap-2">

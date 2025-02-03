@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-
+import { useSysSettings } from "@/src/context/useSysSettings";
+import { useUser } from "@/src/context/useUser";
+import { toast } from "@/src/hooks/use-toast";
 import {
   Tooltip,
   TooltipContent,
@@ -10,14 +12,91 @@ import {
 } from "@/src/components/ui/tooltip";
 import { Download, HelpCircle, Loader2, X } from "lucide-react";
 import { Progress } from "@/src/components/ui/progress";
+import { DownloadProgressData } from "@/src/types/progress";
 
 export default function AddLocalModel() {
+  const [downloadProgress, setDownloadProgress] =
+    useState<DownloadProgressData>({
+      message: "",
+      totalProgress: 0,
+    });
   const [progressMessage, setProgressMessage] = useState("");
   const [currentFile, setCurrentFile] = useState<string>();
   const [fileProgress, setFileProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [localModel, setLocalModel] = useState("");
-  const [localModalLoading, setLocalModalLoading] = useState(false);
+
+  const { activeUser } = useUser();
+  const { setLocalModel, localModel, setLocalModalLoading, localModalLoading } =
+    useSysSettings();
+
+  const handleCancel = async () => {
+    try {
+      /*    const result = await window.electron.cancelDownload(); */
+      const result = { success: true };
+      if (result.success) {
+        toast({
+          title: "Download cancelled",
+          description: "Model download was cancelled successfully",
+        });
+      }
+    } catch (error) {
+      console.error("Error cancelling download:", error);
+    } finally {
+      setIsDownloading(false);
+      setLocalModalLoading(false);
+      setDownloadProgress({ message: "", totalProgress: 0 });
+      setFileProgress(0);
+      setProgressMessage("");
+      setCurrentFile(undefined);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!activeUser) {
+      toast({
+        title: "Invalid User",
+        description: "Please login to download models",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsDownloading(true);
+      setLocalModalLoading(true);
+      setDownloadProgress({
+        message: "Starting download...",
+        totalProgress: 0,
+      });
+      setFileProgress(0);
+      setCurrentFile(undefined);
+      const modelId = localModel.replace("hf.co/", "");
+
+      /* await window.electron.downloadModel({
+        modelId,
+        dirPath: `${localModelDir}/${modelId}`,
+      }); */
+
+      toast({
+        title: "Success",
+        description: `Downloaded model ${modelId}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error downloading model",
+        description:
+          error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+      setLocalModalLoading(false);
+      setDownloadProgress({ message: "", totalProgress: 0 });
+      setFileProgress(0);
+      setProgressMessage("");
+      setCurrentFile(undefined);
+    }
+  };
   // TODO:   Add in Token for Huggingface private model downloads
   return (
     <div className="text-xs text-muted-foreground">
@@ -46,7 +125,12 @@ export default function AddLocalModel() {
                 {progressMessage}
               </p>
               {isDownloading && (
-                <Button variant="destructive" size="sm" className="h-6 px-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleCancel}
+                  className="h-6 px-2"
+                >
                   <X className="h-4 w-4" />
                 </Button>
               )}
@@ -62,15 +146,26 @@ export default function AddLocalModel() {
                   </p>
                 </div>
                 <Progress value={fileProgress} className="h-1" />
-                <div className="flex justify-between text-xs text-muted-foreground"></div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>
+                    {downloadProgress.currentSize || "0 B"} /{" "}
+                    {downloadProgress.totalSize || "0 B"}
+                  </span>
+                  {downloadProgress.speed && (
+                    <span>{downloadProgress.speed}</span>
+                  )}
+                </div>
               </div>
             )}
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Total Progress</span>
-                <span>0%</span>
+                <span>{downloadProgress.totalProgress}%</span>
               </div>
-              <Progress value={0} className="h-1" />
+              <Progress
+                value={downloadProgress.totalProgress}
+                className="h-1"
+              />
             </div>
           </div>
         )}
@@ -85,6 +180,7 @@ export default function AddLocalModel() {
         <Button
           variant="secondary"
           className="w-full"
+          onClick={handleDownload}
           disabled={localModalLoading}
         >
           {localModalLoading ? (

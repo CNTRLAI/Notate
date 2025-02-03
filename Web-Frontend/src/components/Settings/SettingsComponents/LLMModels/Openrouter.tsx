@@ -1,19 +1,39 @@
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { useState } from "react";
+import { useSysSettings } from "@/src/context/useSysSettings";
+import { useUser } from "@/src/context/useUser";
+import { createApiKey } from "@/src/data/apiKeys";
+import { updateSetting } from "@/src/data/settings";
 import { toast } from "@/src/hooks/use-toast";
-import { User } from "next-auth";
+import { useState } from "react";
 
 export default function Openrouter() {
+  const { openRouterModels, activeUser, fetchOpenRouterModels } = useUser();
   const [openRouterModel, setOpenRouterModel] = useState<string>("");
   const [openRouterKey, setOpenRouterKey] = useState<string>("");
-  const [hasOpenRouter, setHasOpenRouter] = useState<boolean>(false);
-  const [activeUser, setActiveUser] = useState<User | null>(null);
- 
-
+  const [hasOpenRouter, setHasOpenRouter] = useState<boolean>(
+    openRouterModels.length > 0
+  );
+  const { settings } = useSysSettings();
   const handleSaveOpenRouterKey = async () => {
     if (!activeUser) return;
-
+    console.log("Saving OpenRouter key");
+    await createApiKey(
+      {
+        id: 0,
+        key: openRouterKey,
+        provider: "openrouter",
+      },
+      activeUser.id
+    );
+    await updateSetting(
+      {
+        ...settings,
+        provider: "openrouter",
+        model: openRouterModel,
+      },
+      activeUser.id
+    );
     setHasOpenRouter(true);
     setOpenRouterKey("");
     toast({
@@ -33,7 +53,16 @@ export default function Openrouter() {
         return;
       }
       if (!activeUser) return;
-
+      /*       await window.electron.addOpenRouterModel(activeUser.id, openRouterModel);
+       */ await updateSetting(
+        {
+          ...settings,
+          provider: "openrouter",
+          model: openRouterModel,
+        },
+        activeUser.id
+      );
+      await fetchOpenRouterModels();
       toast({
         title: "Model Added",
         description: "Your OpenRouter model has been added",
