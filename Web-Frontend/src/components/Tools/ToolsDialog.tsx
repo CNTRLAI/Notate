@@ -1,6 +1,5 @@
 import { Button } from "@/src/components/ui/button";
 import ToolboxIcon from "@/assets/toolbox/toolbox.svg";
-import Image from "next/image";
 import {
   Dialog,
   DialogTrigger,
@@ -10,6 +9,7 @@ import {
   DialogDescription,
 } from "@/src/components/ui/dialog";
 import Tools from "@/src/components/Tools/Tools";
+import Image from "next/image";
 
 export default function ToolsDialog() {
   return (
@@ -20,7 +20,7 @@ export default function ToolsDialog() {
           variant="ghost"
           className="clickable-header-section rounded-none"
         >
-          <Image src={ToolboxIcon} alt="Toolbox" width={16} height={16} />
+          <Image src={ToolboxIcon} alt="Toolbox" className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent>

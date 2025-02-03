@@ -6,6 +6,9 @@ import {
 } from "@/src/components/ui/tabs";
 import { MessageSquare, Cpu, Settings2 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "motion/react";
+import ChatSettings from "./SettingsComponents/ChatSettings";
+import LLMPanel from "./SettingsComponents/LLMPanel";
+import { DevIntegration } from "./SettingsComponents/DevIntegration";
 
 export function SettingsModal() {
   return (
@@ -49,7 +52,9 @@ export function SettingsModal() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
                 className="overflow-auto p-6 overflow-y-hidden"
-              ></motion.div>
+              >
+                <ChatSettings />
+              </motion.div>
             </TabsContent>
             <TabsContent
               key="llm-tab"
@@ -63,7 +68,9 @@ export function SettingsModal() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
                 className="overflow-auto p-6 overflow-y-hidden"
-              ></motion.div>
+              >
+                <LLMPanel />
+              </motion.div>
             </TabsContent>
             <TabsContent
               key="system-tab"
@@ -77,7 +84,9 @@ export function SettingsModal() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
                 className="overflow-auto p-6"
-              ></motion.div>
+              >
+                <DevIntegration />
+              </motion.div>
             </TabsContent>
           </AnimatePresence>
         </LayoutGroup>

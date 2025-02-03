@@ -1,3 +1,5 @@
+import Chat from "@/src/components/Chat/Chat";
+
 export default function Dashboard() {
-  return <div>Dashboard</div>;
+  return <Chat />;
 }
