@@ -3,8 +3,12 @@
 import db from "@/src/lib/db";
 import { DevApiKey } from "@/src/types/apiKeys";
 
-export const getDevApiKeys = async () => {
-  const devApiKeys = await db.dev_api_key.findMany();
+export const getDevApiKeys = async (userId: number) => {
+  const devApiKeys = await db.dev_api_key.findMany({
+    where: {
+      user_id: userId,
+    },
+  });
   return devApiKeys;
 };
 

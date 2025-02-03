@@ -33,16 +33,16 @@ model users {
 }
 
 model web_user {
-  id         Int      @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   username   String
   picture    String?
-  email      String?  @unique
+  email      String? @unique
   password   String?
   image      String?
-  user_id    Int      @unique
-  user       users    @relation(fields: [user_id], references: [id])
-  created_at Int      @default(dbgenerated("strftime('%s', 'now')"))
-  updatedAt  Int      @default(dbgenerated("strftime('%s', 'now')"))
+  user_id    Int     @unique
+  user       users   @relation(fields: [user_id], references: [id])
+  created_at Int     @default(dbgenerated("strftime('%s', 'now')"))
+  updatedAt  Int     @default(dbgenerated("strftime('%s', 'now')"))
 }
 
 model account {
@@ -67,7 +67,6 @@ model account {
   @@index([user_id])
 }
 
-
 model verificationToken {
   identifier String
   token      String
@@ -76,12 +75,12 @@ model verificationToken {
   @@unique([identifier, token])
 }
 
-
 model settings {
   id                Int    @id @default(autoincrement())
   user_id           Int
   model             String
   promptId          String
+  provider          String
   temperature       Float
   maxTokens         Int
   vectorstore       String

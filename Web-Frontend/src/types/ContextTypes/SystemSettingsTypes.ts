@@ -37,7 +37,6 @@ export interface SysSettingsContextType {
   handleRunOllama: (model: string, activeUser: User) => Promise<void>;
   isMaximized: boolean;
   setIsMaximized: React.Dispatch<React.SetStateAction<boolean>>;
-  checkFFMPEG: () => Promise<void>;
   fetchLocalModels: () => Promise<void>;
   checkOllama: () => Promise<void>;
   maxTokens: number;
@@ -45,7 +44,7 @@ export interface SysSettingsContextType {
   localModelDir: string;
   setLocalModelDir: React.Dispatch<React.SetStateAction<string>>;
   loadModelsFromDirectory: (dirPath: string) => Promise<void>;
-  fetchSettings: (activeUser: User) => Promise<void>;
+  fetchSettings: (activeUserId: number) => Promise<void>;
   handleRunModel: (
     model_name: string,
     model_location: string,
@@ -60,5 +59,5 @@ export interface SysSettingsContextType {
   setSelectedProvider: React.Dispatch<React.SetStateAction<string>>;
   localModel: string;
   setLocalModel: React.Dispatch<React.SetStateAction<string>>;
-  handleOllamaIntegration: (activeUser: User) => Promise<void>;
+  handleOllamaIntegration: (activeUserId: number) => Promise<void>;
 }

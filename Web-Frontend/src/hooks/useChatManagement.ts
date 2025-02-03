@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Message } from "../types/messages";
-import { User } from "../types/user";
+import { User } from "next-auth";
 
 export const useChatManagement = (
   activeUser: User | null,
@@ -33,25 +33,27 @@ export const useChatManagement = (
       setInput("");
 
       try {
-        /*   const result = await window.electron.chatRequest(
-          [...messages, newUserMessage],
-          activeUser,
-          undefined,
-          collectionId,
-          undefined,
-          requestId
-        );
+        // Make API request to chat endpoint
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: suggestion || input,
+            requestId: requestId.toString(),
+            userId: activeUser.id,
+            collectionId,
+          }),
+        });
 
-        if (result.error) {
-          setError(result.error);
-          setIsLoading(false);
-          console.error("Error in chat:", result.error);
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to send message");
         }
 
-        setMessages(result.messages);
- */
-        // Notify parent of chat completion
-        onChatComplete?.();
+        // The actual message updates will come through the SSE connection
+        // which is handled by the useChatLogic hook
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") {
           setError("Request was cancelled");
@@ -64,19 +66,34 @@ export const useChatManagement = (
   );
 
   const cancelRequest = useCallback(() => {
-    return new Promise<void>((resolve) => {
+    return new Promise<void>(async (resolve) => {
       if (currentRequestId) {
-        /*   window.electron.abortChatRequest(currentRequestId);
-        setTimeout(() => {
+        try {
+          await fetch("/api/chat/abort", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              requestId: currentRequestId.toString(),
+            }),
+          });
+
           setStreamingMessage("");
           setStreamingMessageReasoning("");
-          resolve();
-        }, 100); */
-      } else {
-        resolve();
+          setIsLoading(false);
+        } catch (error) {
+          console.error("Failed to cancel request:", error);
+        }
       }
+      resolve();
     });
-  }, [currentRequestId]);
+  }, [
+    currentRequestId,
+    setStreamingMessage,
+    setStreamingMessageReasoning,
+    setIsLoading,
+  ]);
 
   return {
     messages,

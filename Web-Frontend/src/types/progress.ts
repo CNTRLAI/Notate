@@ -64,3 +64,11 @@ export interface DownloadModelProgress {
     totalProgress: number;
   };
 }
+
+export interface PythonProgressData {
+  type: string;
+  message: string;
+  chunk?: number;
+  totalChunks?: number;
+  percent_complete?: string;
+}

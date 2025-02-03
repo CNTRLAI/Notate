@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Conversation } from "../types/convo";
-import { User } from "../types/user";
+import { User } from "next-auth";
 
 export const useConversationManagement = (activeUser: User | null) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);

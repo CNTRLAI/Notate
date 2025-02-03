@@ -3,7 +3,7 @@ export interface UserSettings {
   id?: number;
   cot?: number;
   vectorstore?: string;
-  prompt?: string;
+  prompt?: number;
   temperature?: number;
   model?: string;
   provider?: string;
@@ -19,6 +19,6 @@ export interface UserSettings {
   displayModel?: string;
   maxTokens?: number;
   topP?: number;
-  promptId?: number;
+  promptId?: string;
   webSearch?: number;
 }

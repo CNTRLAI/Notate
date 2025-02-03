@@ -12,13 +12,13 @@ import {
 } from "@/src/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import FormError from "@/src/components/Authentication/forms/form-error";
-import { register } from "@/src/lib/actions/register";
+import { register } from "@/src/lib/actions/auth/register";
 import { startTransition } from "react";
 import { RegisterSchema } from "@/src/schemas/registerSchema";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { login } from "@/src/lib/actions/login";
+import { login } from "@/src/lib/actions/auth/login";
 import { motion } from "motion/react";
 import { Separator } from "@/src/components/ui/separator";
 import { Loader2 } from "lucide-react";

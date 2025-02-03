@@ -7,17 +7,25 @@ import { useModelManagement } from "@/src/hooks/useModelManagement";
 import { useUIState } from "@/src/hooks/useUIState";
 import { useState, useCallback } from "react";
 import { UserContextType } from "@/src/types/ContextTypes/UserContextType";
-import { User } from "../types/user";
 import { ApiKey, DevApiKey } from "../types/apiKeys";
 import { Conversation } from "../types/convo";
 import { UserPrompts } from "../types/prompts";
 import { getDevApiKeys } from "@/src/data/devapi";
+import { getSettingById } from "../data/settings";
+import { getApiKeys } from "../data/apiKeys";
+import { getPrompts } from "@/src/data/prompt";
+import { getConversationMessagesWithData } from "@/src/data/conversations";
+import { Message } from "@/src/types/messages";
+import { useSession } from "next-auth/react";
+import { User } from "next-auth";
+
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [activeUser, setActiveUser] = useState<User | null>(null);
+  const session = useSession();
+  const activeUser = session.data?.user as User | null;
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [apiKeyInput, setApiKeyInput] = useState<string>("");
   const [filteredConversations, setFilteredConversations] = useState<
@@ -95,7 +103,7 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchDevAPIKeys = useCallback(async () => {
     if (activeUser) {
-      const keys = await getDevApiKeys();
+      const keys = await getDevApiKeys(Number(activeUser.id));
       console.log(keys);
       setDevAPIKeys(keys as DevApiKey[]);
     }
@@ -103,22 +111,20 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchApiKey = useCallback(async () => {
     if (activeUser) {
-      /* const apiKeys = await window.electron.getUserApiKeys(activeUser.id);
-      const settings = await window.electron.getUserSettings(activeUser.id);
-      if (apiKeys.apiKeys.length === 0 && settings.provider !== "local") {
+      const apiKeys = await getApiKeys(Number(activeUser.id));
+      const settings = await getSettingById(Number(activeUser.id));
+      if (apiKeys.length === 0 && settings?.provider !== "local") {
         setAlertForUser(true);
         return;
       }
-      setApiKeys(apiKeys.apiKeys as ApiKey[]); */
+      setApiKeys(apiKeys as ApiKey[]);
     }
   }, [activeUser, setAlertForUser]);
 
   const fetchPrompts = useCallback(async () => {
     if (activeUser) {
-      /*    const fetchedPrompts = await window.electron.getUserPrompts(
-        activeUser.id
-      );
-      setPrompts(fetchedPrompts.prompts as UserPrompts[]); */
+      const fetchedPrompts = await getPrompts(Number(activeUser.id));
+      setPrompts(fetchedPrompts as UserPrompts[]);
     }
   }, [activeUser]);
 
@@ -128,12 +134,11 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
         (conv: Conversation) => conv.id === activeConversation
       );
       if (conversation && activeUser) {
-        /*  const newMessages =
-          await window.electron.getConversationMessagesWithData(
-            activeUser.id,
-            conversation.id
-          );
-        setMessages(newMessages.messages); */
+        const newMessages = await getConversationMessagesWithData(
+          Number(activeUser.id),
+          conversation.id
+        );
+        setMessages(newMessages.messages as Message[]);
       }
     }
   }, [activeConversation, conversations, activeUser, setMessages]);
@@ -170,8 +175,6 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   // Memoize the main context value
   const contextValue = useMemo<UserContextType>(
     () => ({
-      activeUser,
-      setActiveUser,
       apiKeys,
       setApiKeys,
       activeConversation,
@@ -234,6 +237,7 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       userTools,
       setUserTools,
       toggleTool,
+      activeUser,
     }),
     [
       activeUser,

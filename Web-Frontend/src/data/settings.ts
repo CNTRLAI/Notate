@@ -11,6 +11,7 @@ export const getSettings = async () => {
 export const createSetting = async (setting: UserSettings, user_id: number) => {
   const newSetting = await db.settings.create({
     data: {
+      provider: setting.provider || "openai",
       model: setting.model || "gpt-3.5-turbo",
       promptId: "0",
       user_id: user_id,
@@ -81,4 +82,14 @@ export const addUserPrompt = async (
     data: { user_id, name, prompt },
   });
   return newPrompt;
+};
+
+
+
+
+export const getPromptById = async (id: number) => {
+  const prompt = await db.prompts.findUnique({
+    where: { id },
+  });
+  return prompt;
 };

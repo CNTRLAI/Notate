@@ -1,11 +1,9 @@
 import { useChatInput } from "@/src/context/useChatInput";
 import { useUser } from "@/src/context/useUser";
-import { useView } from "@/src/context/useView";
 import { useEffect } from "react";
-
 import { useRef } from "react";
-
 import { useState } from "react";
+import { Message } from "@/src/types/messages";
 
 export function useChatLogic() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -15,17 +13,21 @@ export function useChatLogic() {
   const [hasUserScrolled, setHasUserScrolled] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  const { setActiveView } = useView();
   const {
     handleResetChat: originalHandleResetChat,
     agentActions,
+    setAgentActions,
     streamingMessage,
+    setStreamingMessage,
     streamingMessageReasoning,
-    activeUser,
+    setStreamingMessageReasoning,
     messages,
+    setMessages,
+    currentRequestId,
+    setCurrentRequestId,
   } = useUser();
 
-  const { isLoading } = useChatInput();
+  const { isLoading, setIsLoading } = useChatInput();
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
     const scrollElement = scrollAreaRef.current?.querySelector(
@@ -59,15 +61,12 @@ export function useChatLogic() {
     hasUserScrolled,
   ]);
 
-  // Move all the useEffects here
   useEffect(() => {
     if (messages.length === 0) {
       setHasUserScrolled(false);
       setShouldAutoScroll(true);
     }
   }, [messages.length]);
-
-  // Move other effects...
 
   useEffect(() => {
     const scrollElement = scrollAreaRef.current?.querySelector(
@@ -98,112 +97,112 @@ export function useChatLogic() {
       };
     }
   }, [hasUserScrolled]);
-  /* 
+
   useEffect(() => {
     let newMessage: string = "";
     let newReasoning: string = "";
-    let isSubscribed = true; // Add a flag to prevent updates after unmount
+    let eventSource: EventSource | null = null;
+    let isSubscribed = true;
 
-    const handleMessageChunk = (chunk: string) => {
-      if (!isSubscribed) return; // Skip if component is unmounted
-      if (chunk.startsWith("[REASONING]:")) {
-        newReasoning += chunk.replace("[REASONING]:", "");
-        setStreamingMessageReasoning(newReasoning);
-      } else if (chunk.startsWith("[Agent]:")) {
-        setAgentActions(chunk.replace("[Agent]:", ""));
-      } else {
-        newMessage += chunk;
-        setStreamingMessage(newMessage);
-      }
-    };
+    if (isLoading && currentRequestId) {
+      eventSource = new EventSource(
+        `/api/chat/stream?requestId=${currentRequestId}`
+      );
 
-   const handleStreamEnd = () => {
-      if (!isSubscribed) return;
+      eventSource.onmessage = (event) => {
+        if (!isSubscribed) return;
+        try {
+          const data = JSON.parse(event.data);
 
-      const finalMessage = newMessage;
-      const finalReasoning = newReasoning;
+          if (data.type === "reasoning") {
+            newReasoning += data.content;
+            setStreamingMessageReasoning(newReasoning);
+          } else if (data.type === "agent") {
+            setAgentActions(data.content);
+          } else if (data.type === "content") {
+            newMessage += data.content;
+            setStreamingMessage(newMessage);
+          } else if (data.type === "complete") {
+            const finalMessage = newMessage;
+            const finalReasoning = newReasoning;
 
-      setMessages((prevMessages) => {
-        const lastMessage = prevMessages[prevMessages.length - 1];
-        if (!lastMessage || lastMessage.role === "user") {
-          return [
-            ...prevMessages,
-            {
-              role: "assistant",
-              content: finalMessage,
-              reasoning_content: finalReasoning,
-              timestamp: new Date(),
-            },
-          ];
-        } else if (lastMessage.role === "assistant") {
-          const updatedMessage = {
-            ...lastMessage,
-            content: finalMessage,
-            reasoning_content: finalReasoning,
-          };
-          return [...prevMessages.slice(0, -1), updatedMessage];
-        }
-        return prevMessages;
-      });
-
-      // Ensure we stay at bottom when message completes
-      if (!hasUserScrolled) {
-        requestAnimationFrame(() => {
-          if (!isSubscribed) return;
-          const scrollElement = scrollAreaRef.current?.querySelector(
-            "[data-radix-scroll-area-viewport]"
-          );
-          if (scrollElement) {
-            scrollElement.scrollTo({
-              top: scrollElement.scrollHeight,
-              behavior: "instant",
+            setMessages((prevMessages: Message[]) => {
+              const lastMessage = prevMessages[prevMessages.length - 1];
+              if (!lastMessage || lastMessage.role === "user") {
+                return [
+                  ...prevMessages,
+                  {
+                    role: "assistant",
+                    content: finalMessage,
+                    reasoning_content: finalReasoning,
+                    timestamp: new Date(),
+                  },
+                ];
+              } else if (lastMessage.role === "assistant") {
+                const updatedMessage = {
+                  ...lastMessage,
+                  content: finalMessage,
+                  reasoning_content: finalReasoning,
+                };
+                return [...prevMessages.slice(0, -1), updatedMessage];
+              }
+              return prevMessages;
             });
+
+            if (!hasUserScrolled) {
+              requestAnimationFrame(() => {
+                if (!isSubscribed) return;
+                const scrollElement = scrollAreaRef.current?.querySelector(
+                  "[data-radix-scroll-area-viewport]"
+                );
+                if (scrollElement) {
+                  scrollElement.scrollTo({
+                    top: scrollElement.scrollHeight,
+                    behavior: "instant",
+                  });
+                }
+                setStreamingMessage("");
+                setStreamingMessageReasoning("");
+                setIsLoading(false);
+                setCurrentRequestId(null);
+              });
+            } else {
+              setStreamingMessage("");
+              setStreamingMessageReasoning("");
+              setIsLoading(false);
+              setCurrentRequestId(null);
+            }
+
+            eventSource?.close();
           }
-          setStreamingMessage("");
-          setStreamingMessageReasoning("");
-          setIsLoading(false);
-          setCurrentRequestId(null);
-        });
-      } else {
-        // If user has scrolled, just update the state without forcing scroll
-        setStreamingMessage("");
-        setStreamingMessageReasoning("");
+        } catch (error) {
+          console.error("Error parsing SSE data:", error);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error("SSE Error:", error);
+        eventSource?.close();
         setIsLoading(false);
         setCurrentRequestId(null);
-      }
-
-      newMessage = "";
-      newReasoning = "";
-    };
-
-    // Remove any existing listeners before adding new ones
-    window.electron.offMessageChunk(handleMessageChunk);
-    window.electron.offStreamEnd(handleStreamEnd);
-
-    // Add new listeners
-    window.electron.onMessageChunk(handleMessageChunk);
-    window.electron.onStreamEnd(handleStreamEnd);
+      };
+    }
 
     return () => {
-      isSubscribed = false; // Set flag to prevent updates after unmount
-      // Clean up listeners
-      window.electron.offMessageChunk(handleMessageChunk);
-      window.electron.offStreamEnd(handleStreamEnd);
+      isSubscribed = false;
+      eventSource?.close();
     };
   }, [
+    isLoading,
+    currentRequestId,
     setIsLoading,
     setMessages,
     setStreamingMessage,
     setStreamingMessageReasoning,
     setAgentActions,
     setCurrentRequestId,
+    hasUserScrolled,
   ]);
- */
-  useEffect(() => {
-    if (!activeUser) {
-      setActiveView("SelectAccount");
-    }
-  }, [activeUser, setActiveView]);
 
   const handleResetChat = async () => {
     await originalHandleResetChat();

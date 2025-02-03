@@ -41,3 +41,27 @@ export const getConversationsByUserId = async (user_id: number) => {
   });
   return conversations;
 };
+
+export const getConversationMessagesWithData = async (
+  conversation_id: number,
+  user_id: number
+) => {
+  const conversation = await db.conversations.findUnique({
+    where: {
+      id: conversation_id,
+      user_id: user_id,
+    },
+  });
+
+  const messages = await db.messages.findMany({
+    where: {
+      conversation_id,
+      user_id,
+    },
+    include: {
+      retrieved_data: true,
+    },
+  });
+
+  return { conversation, messages };
+};

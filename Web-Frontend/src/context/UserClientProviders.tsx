@@ -1,6 +1,5 @@
 import { UserProvider } from "./UserContext";
 import { SysSettingsProvider } from "./SysSettingsContext";
-import { ViewProvider } from "./ViewContext";
 import { LibraryProvider } from "./LibraryContext";
 
 export default function UserClientProviders({
@@ -11,9 +10,7 @@ export default function UserClientProviders({
   return (
     <UserProvider>
       <LibraryProvider>
-        <SysSettingsProvider>
-          <ViewProvider>{children}</ViewProvider>
-        </SysSettingsProvider>
+        <SysSettingsProvider>{children}</SysSettingsProvider>
       </LibraryProvider>
     </UserProvider>
   );

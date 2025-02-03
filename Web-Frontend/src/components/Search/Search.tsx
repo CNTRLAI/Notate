@@ -3,7 +3,6 @@
 import { SearchIcon, Search } from "lucide-react";
 import { useUser } from "@/src/context/useUser";
 import { useEffect, useState, useCallback } from "react";
-import { useView } from "@/src/context/useView";
 import { Conversation } from "@/src/types/convo";
 
 type ConversationWithTimestamp = Conversation & {
@@ -24,7 +23,6 @@ export default function SearchComponent() {
     setMessages,
   } = useUser();
 
-  const { activeView, setActiveView } = useView();
   const [sortedConversations, setSortedConversations] = useState<
     ConversationWithTimestamp[]
   >([]);
@@ -36,7 +34,9 @@ export default function SearchComponent() {
       conversations.map(async (conv) => {
         return {
           ...conv,
-          latestMessageTime: conv.created_at ? new Date(conv.created_at).getTime() : 0,
+          latestMessageTime: conv.created_at
+            ? new Date(conv.created_at).getTime()
+            : 0,
         };
       })
     );
@@ -60,9 +60,6 @@ export default function SearchComponent() {
 
   const handleConversationClick = (conversationId: number) => {
     setActiveConversation(conversationId);
-    if (activeView !== "Chat") {
-      setActiveView("Chat");
-    }
     setIsSearchOpen(false);
     setSearchTerm("");
     const conversation = conversations.find(

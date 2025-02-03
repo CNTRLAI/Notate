@@ -1,7 +1,9 @@
 import db from "@/src/lib/db";
 
-export const getCollections = async () => {
-  const collections = await db.collections.findMany();
+export const getCollections = async (user_id: number) => {
+  const collections = await db.collections.findMany({
+    where: { user_id },
+  });
   return collections;
 };
 
@@ -26,6 +28,24 @@ export const createCollection = async (
   });
   return {
     ...newCollection,
-    userId: newCollection.user_id
+    userId: newCollection.user_id,
   };
+};
+
+export const getFilesInCollection = async (collection_id: number) => {
+  const files = await db.collections.findUnique({
+    where: { id: collection_id },
+  });
+  return files?.files;
+};
+
+export const deleteCollection = async (collection_id: number) => {
+  await db.collections.delete({ where: { id: collection_id } });
+};
+
+export const getCollection = async (collection_id: number) => {
+  const collection = await db.collections.findUnique({
+    where: { id: collection_id },
+  });
+  return collection;
 };

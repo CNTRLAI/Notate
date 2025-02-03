@@ -48,23 +48,8 @@ const SysSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   const totalVRAM = systemSpecs.totalVRAM;
   const [maxTokens, setMaxTokens] = useState(4096);
 
-  const checkFFMPEG = async () => {
-    try {
-      /*  const result = await window.electron.checkIfFFMPEGInstalled();
-      if (result && typeof result.success === "boolean") {
-        setisFFMPEGInstalled(result.success);
-      } else {
-        console.error("Invalid FFMPEG check result:", result);Í
-        setisFFMPEGInstalled(false);
-      } */
-    } catch (error) {
-      console.error("Error checking FFMPEG:", error);
-      setisFFMPEGInstalled(false);
-    }
-  };
-
-  const handleOllamaIntegration = async (activeUser: User) => {
-    console.log("handleOllamaIntegration", activeUser);
+  const handleOllamaIntegration = async (activeUserId: number) => {
+    console.log("handleOllamaIntegration", activeUserId);
     /*  const startUpOllama = await window.electron.checkOllama();
     if (activeUser && startUpOllama) {
       const models = await window.electron.fetchOllamaModels();
@@ -218,11 +203,11 @@ const SysSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
       setLocalModalLoading(false);
     }
   };
-  const fetchSettings = async (activeUser: User) => {
-    if (activeUser) {
+  const fetchSettings = async (activeUserId: number) => {
+    if (activeUserId) {
       /*       const settings = await window.electron.getUserSettings(activeUser.id);
        */ if (parseInt(settings?.ollamaIntegration?.toString() ?? "0") === 1) {
-        handleOllamaIntegration(activeUser);
+        handleOllamaIntegration(activeUserId);
       }
       setSettings(settings);
       if (settings.modelDirectory) {
@@ -307,7 +292,6 @@ const SysSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
         handleRunOllama,
         isMaximized,
         setIsMaximized,
-        checkFFMPEG,
         fetchLocalModels,
         checkOllama,
         maxTokens,

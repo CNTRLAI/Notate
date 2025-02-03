@@ -1,16 +1,15 @@
 import { ApiKey, DevApiKey } from "@/src/types/apiKeys";
-import { User } from "@/src/types/user";
 import { Conversation } from "@/src/types/convo";
 import { Message } from "@/src/types/messages";
 import { UserPrompts } from "@/src/types/prompts";
 import { AzureModel, CustomModel, OpenRouterModel } from "@/src/types/Models";
 import { Tool, UserTool } from "@/src/types/tools";
+import { User } from "next-auth";
 
 export interface UserContextType {
   title: string | null;
   setTitle: React.Dispatch<React.SetStateAction<string | null>>;
   activeUser: User | null;
-  setActiveUser: React.Dispatch<React.SetStateAction<User | null>>;
   apiKeys: ApiKey[];
   setApiKeys: React.Dispatch<React.SetStateAction<ApiKey[]>>;
   activeConversation: number | null;

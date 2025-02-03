@@ -6,7 +6,13 @@ import { LibraryContextType } from "@/src/types/ContextTypes/LibraryContextTypes
 import { Collection } from "../types/collection";
 import { Model } from "../types/Models";
 import { ProgressData } from "../types/progress";
-
+import {
+  getFilesInCollection,
+  deleteCollection,
+  getCollections,
+} from "@/src/data/collections";
+import { addFileToCollection } from "../lib/actions/storage/newFile";
+import { cancelEmbed } from "../lib/actions/embedding/cancelEmbed";
 const LibraryContext = createContext<LibraryContextType | undefined>(undefined);
 
 const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -35,16 +41,13 @@ const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({
   const [embeddingModels, setEmbeddingModels] = useState<Model[]>([]);
   const loadFiles = useCallback(async () => {
     if (!activeUser?.id || !activeUser?.name || !selectedCollection?.id) return;
-    /*     const fileList = await window.electron.getFilesInCollection(
-      activeUser.id,
-      selectedCollection.id
-    );
-    setFiles(fileList.files as unknown as string[]); */
+    const fileList = await getFilesInCollection(selectedCollection.id);
+    setFiles(fileList?.split(",").filter(Boolean) || []);
   }, [activeUser?.id, selectedCollection?.id, activeUser?.name, setFiles]);
   const handleCancelEmbed = async () => {
     try {
       if (!activeUser?.id) return;
-      /*  await window.electron.cancelEmbed({ userId: activeUser.id }); */
+      await cancelEmbed({ userId: Number(activeUser.id) });
       setProgressMessage("Embedding cancelled");
       setProgress(0);
       setShowUpload(false);
@@ -53,14 +56,10 @@ const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const handleDeleteCollection = () => {
+  const handleDeleteCollection = async () => {
     if (!activeUser?.id || !selectedCollection?.id || !setShowUpload) return;
     setShowUpload(false);
-    /*  window.electron.deleteCollection(
-      selectedCollection.id,
-      selectedCollection.name,
-      activeUser.id
-    ); */
+    await deleteCollection(selectedCollection.id);
     setUserCollections(
       [...userCollections].filter((c) => c.id !== selectedCollection.id)
     );
@@ -142,20 +141,20 @@ const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({
   };
   const fetchCollections = async () => {
     if (activeUser) {
-      /*  const fetchedCollections = await window.electron.getUserCollections(
-        activeUser.id
+      const fetchedCollections = await getCollections(Number(activeUser.id));
+      setUserCollections(
+        fetchedCollections.map((c) => ({
+          ...c,
+          userId: c.user_id,
+        })) as Collection[]
       );
-      setUserCollections(fetchedCollections.collections as Collection[]); */
     }
   };
 
   const fetchFilesInCollection = useCallback(async () => {
     if (activeUser && selectedCollection) {
-      /*  const files = await window.electron.getFilesInCollection(
-        activeUser.id,
-        selectedCollection.id
-      );
-      setFiles(files.files); */
+      const files = await getFilesInCollection(selectedCollection.id);
+      setFiles(files?.split(",").filter(Boolean) || []);
     }
   }, [activeUser, selectedCollection]);
 
@@ -170,16 +169,16 @@ const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({
         const content = e.target?.result;
         if (typeof content !== "string") return;
 
-        /*     const result = await window.electron.addFileToCollection(
-          activeUser.id,
-          activeUser.name,
+        const result = await addFileToCollection(
+          Number(activeUser.id),
+          activeUser.name || "",
           selectedCollection.id,
           selectedCollection.name,
           selectedFile.name,
           content
         );
 
-        if (result.result.success) {
+        if (result.success) {
           setSelectedFile(null);
           setProgressMessage("");
           setProgress(0);
@@ -192,7 +191,7 @@ const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({
             description: "Check your OPENAI API keys and try again",
             variant: "destructive",
           });
-        } */
+        }
       };
       reader.readAsText(selectedFile);
     } catch (error) {
@@ -223,62 +222,52 @@ const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({
     fetchFilesInCollection();
   }, [fetchFilesInCollection]);
 
-  /*   useEffect(() => {
+  useEffect(() => {
     const updateState = (msg: string, prog: number) => {
       setProgressMessage(msg);
       setProgress(prog);
     };
 
-    const handleProgress = (
-      _: Event,
-      message:
-        | string
-        | ProgressData
-        | OllamaProgressEvent
-        | DownloadModelProgress
-    ) => {
-      try {
-        const data =
-          typeof message === "string" ? JSON.parse(message) : message;
+    let eventSource: EventSource | null = null;
 
-        setShowProgress(true);
+    if (ingesting) {
+      // Create EventSource when ingesting starts
+      eventSource = new EventSource("/api/progress");
 
-        if (typeof data === "string") {
-          updateState(data, 0);
-          return;
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setShowProgress(true);
+
+          if (data.type === "progress") {
+            updateState(data.message, data.progress);
+          } else if (data.type === "complete") {
+            updateState(data.message || "Complete", 100);
+            // Close the connection when complete
+            eventSource?.close();
+          } else if (data.type === "error") {
+            updateState(data.message || "Error occurred", 0);
+            eventSource?.close();
+          }
+        } catch (error) {
+          console.error("Error parsing SSE data:", error);
         }
+      };
 
-        if (
-          "type" in data &&
-          (data.type === "pull" || data.type === "verify")
-        ) {
-          // Handle Ollama progress
-          setProgressMessage(`Ollama: ${data.status || data.type}`);
-          return;
-        }
+      eventSource.onerror = (error) => {
+        console.error("SSE Error:", error);
+        eventSource?.close();
+        setShowProgress(false);
+      };
+    }
 
-        if ("total" in data && "received" in data) {
-          // Handle DownloadModelProgress
-          const percentage = Math.floor((data.received / data.total) * 100);
-          setProgressMessage(`Downloading model: ${percentage}%`);
-          setProgress(percentage);
-          return;
-        }
-
-        handleProgressData(data as ProgressData);
-      } catch (error) {
-        console.error("Error handling progress:", error);
-        if (typeof message === "string") {
-          updateState(message, 0);
-        }
+    // Cleanup function
+    return () => {
+      if (eventSource) {
+        eventSource.close();
       }
     };
-
-    window.electron.on("ingest-progress", handleProgress);
-    return () => {
-      window.electron.removeListener("ingest-progress", handleProgress);
-    };
-  }, [setProgressMessage, setProgress, setShowProgress]); */
+  }, [ingesting, setProgressMessage, setProgress, setShowProgress]);
 
   return (
     <LibraryContext.Provider

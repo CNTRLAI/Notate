@@ -3,9 +3,23 @@
 import db from "@/src/lib/db";
 import { ApiKey, DevApiKey } from "../types/apiKeys";
 
-export const getApiKeys = async () => {
-  const apiKeys = await db.api_keys.findMany();
+export const getApiKeys = async (userId: number) => {
+  const apiKeys = await db.api_keys.findMany({
+    where: {
+      user_id: userId,
+    },
+  });
   return apiKeys;
+};
+
+export const getApiKey = async (userId: number, provider: string) => {
+  const apiKey = await db.api_keys.findFirst({
+    where: {
+      user_id: userId,
+      provider: provider,
+    },
+  });
+  return apiKey;
 };
 
 export const createApiKey = async (apiKey: ApiKey, user_id: number) => {
