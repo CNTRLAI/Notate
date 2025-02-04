@@ -136,6 +136,7 @@ interface UserSettings {
   topP?: number;
   promptId?: number;
   webSearch?: number;
+  reasoningEffort?: string;
 }
 
 type Collection = {

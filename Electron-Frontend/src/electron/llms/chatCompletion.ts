@@ -87,17 +87,32 @@ export async function chatCompletion(
   // Truncate messages to fit within token limits while preserving max output tokens
   const truncatedMessages = truncateMessages(newMessages, maxOutputTokens);
   truncatedMessages.unshift(newSysPrompt);
-  const stream = await openai.chat.completions.create(
-    {
-      model: userSettings.model as string,
-      messages: truncatedMessages,
-      stream: true,
-      temperature: Number(userSettings.temperature),
-      max_tokens: Number(maxOutputTokens),
-    },
-    { signal }
-  );
-
+  let stream;
+  if (userSettings.model === "o3-mini-2025-01-31") {
+    stream = await openai.chat.completions.create(
+      {
+        model: userSettings.model as string,
+        messages: truncatedMessages,
+        stream: true,
+        reasoning_effort: userSettings.reasoningEffort as
+          | "low"
+          | "medium"
+          | "high",
+      },
+      { signal }
+    );
+  } else {
+    stream = await openai.chat.completions.create(
+      {
+        model: userSettings.model as string,
+        messages: truncatedMessages,
+        stream: true,
+        temperature: Number(userSettings.temperature),
+        max_tokens: Number(maxOutputTokens),
+      },
+      { signal }
+    );
+  }
   const newMessage: Message = {
     role: "assistant",
     content: "",

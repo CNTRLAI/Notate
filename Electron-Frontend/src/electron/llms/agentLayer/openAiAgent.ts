@@ -60,7 +60,6 @@ export async function openAiAgent(
       model: userSettings.model as string,
       messages: [sysPrompt, ...messages],
       temperature: 0.1,
-      max_tokens: maxOutputTokens,
       response_format: { type: "json_object" },
     },
     { signal }

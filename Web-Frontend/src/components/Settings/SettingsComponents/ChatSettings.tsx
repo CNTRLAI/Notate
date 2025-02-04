@@ -144,6 +144,10 @@ export default function ChatSettings() {
     "gpt-3.5-turbo": 4096,
     "gpt-4o": 8192,
     "gpt-4o-mini": 4096,
+    "o1-preview": 8192,
+    "o1-mini": 4096,
+    o1: 8192,
+    "o3-mini-2025-01-31": 4096,
     "claude-3-5-sonnet-20241022": 8192,
     "claude-3-5-haiku-20241022": 8192,
     "claude-3-opus-20240229": 4096,
@@ -162,7 +166,15 @@ export default function ChatSettings() {
   };
 
   const modelOptions = {
-    openai: ["gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"],
+    openai: [
+      "gpt-3.5-turbo",
+      "gpt-4o",
+      "gpt-4o-mini",
+      "o1-preview",
+      "o1-mini",
+      "o1",
+      "o3-mini-2025-01-31",
+    ],
     anthropic: [
       "claude-3-5-sonnet-20241022",
       "claude-3-5-haiku-20241022",

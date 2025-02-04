@@ -47,16 +47,33 @@ export async function openAiChainOfThought(
   console.log(sysPrompt);
   const truncatedMessages = truncateMessages(messages, maxOutputTokens);
   const newMessages = [sysPrompt, ...truncatedMessages];
-  const reasoning = await provider.chat.completions.create(
-    {
-      model: userSettings.model as string,
-      messages: newMessages,
-      stream: true,
-      temperature: Number(userSettings.temperature),
-      max_tokens: Number(maxOutputTokens),
-    },
-    { signal }
-  );
+  let reasoning;
+
+  if (
+    userSettings.model === "o1-preview" ||
+    userSettings.model === "o1-mini" ||
+    userSettings.model === "o1" ||
+    userSettings.model === "o3-mini-2025-01-31"
+  ) {
+    reasoning = await provider.chat.completions.create(
+      {
+        model: userSettings.model as string,
+        messages: newMessages,
+        stream: true,
+      },
+      { signal }
+    );
+  } else {
+    reasoning = await provider.chat.completions.create(
+      {
+        model: userSettings.model as string,
+        messages: newMessages,
+        stream: true,
+        temperature: Number(userSettings.temperature),
+      },
+      { signal }
+    );
+  }
 
   let reasoningContent = "";
   for await (const chunk of reasoning) {

@@ -59,6 +59,7 @@ class DatabaseService {
           selectedCustomId INTEGER,
           cot INTEGER DEFAULT 0,
           webSearch INTEGER DEFAULT 0,
+          reasoningEffort TEXT,
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
 
@@ -245,6 +246,7 @@ class DatabaseService {
         { name: "selectedCustomId", type: "INTEGER" },
         { name: "cot", type: "INTEGER" },
         { name: "webSearch", type: "INTEGER" },
+        { name: "reasoningEffort", type: "TEXT" },
       ];
       // Get current table info
       const tableInfo = this.db
@@ -286,6 +288,7 @@ class DatabaseService {
             selectedCustomId INTEGER,
             cot INTEGER DEFAULT 0,
             webSearch INTEGER DEFAULT 0,
+            reasoningEffort TEXT,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
           );
         `);
@@ -309,6 +312,7 @@ class DatabaseService {
           selectedCustomId: number;
           cot: number;
           webSearch: number;
+          reasoningEffort: string;
         }[]) {
           try {
             // Check if user exists before restoring their settings
@@ -323,8 +327,8 @@ class DatabaseService {
               INSERT INTO settings (
                 user_id, model, promptId, temperature, provider, maxTokens,
                 vectorstore, modelDirectory, modelType, modelLocation,
-                ollamaIntegration, ollamaModel, baseUrl, selectedAzureId, selectedCustomId, webSearch
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ollamaIntegration, ollamaModel, baseUrl, selectedAzureId, selectedCustomId, webSearch, reasoningEffort
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `
               )
               .run(
@@ -343,7 +347,8 @@ class DatabaseService {
                 row.baseUrl,
                 row.selectedAzureId,
                 row.selectedCustomId,
-                row.webSearch
+                row.webSearch,
+                row.reasoningEffort
               );
           } catch (error) {
             console.error("Error restoring settings row:", error);
@@ -428,6 +433,7 @@ class DatabaseService {
           "selectedCustomId",
           "cot",
           "webSearch",
+          "reasoningEffort",
         ],
         api_keys: ["id", "user_id", "key", "provider", "created_at"],
         prompts: ["id", "user_id", "name", "prompt", "created_at"],
@@ -576,11 +582,13 @@ class DatabaseService {
       selectedCustomId:
         settings.selectedCustomId ?? currentSettings?.selectedCustomId,
       webSearch: settings.webSearch ?? currentSettings?.webSearch,
+      reasoningEffort:
+        settings.reasoningEffort ?? currentSettings?.reasoningEffort,
     };
 
     return this.db
       .prepare(
-        "UPDATE settings SET model = ?, promptId = ?, temperature = ?, provider = ?, maxTokens = ?, vectorstore = ?, modelDirectory = ?, modelType = ?, modelLocation = ?, ollamaIntegration = ?, ollamaModel = ?, baseUrl = ?, selectedAzureId = ?, selectedCustomId = ?, cot = ?, webSearch = ? WHERE user_id = ?"
+        "UPDATE settings SET model = ?, promptId = ?, temperature = ?, provider = ?, maxTokens = ?, vectorstore = ?, modelDirectory = ?, modelType = ?, modelLocation = ?, ollamaIntegration = ?, ollamaModel = ?, baseUrl = ?, selectedAzureId = ?, selectedCustomId = ?, cot = ?, webSearch = ?, reasoningEffort = ? WHERE user_id = ?"
       )
       .run(
         updatedSettings.model,
@@ -599,6 +607,7 @@ class DatabaseService {
         updatedSettings.selectedCustomId,
         updatedSettings.cot,
         updatedSettings.webSearch,
+        updatedSettings.reasoningEffort,
         settings.userId
       );
   }

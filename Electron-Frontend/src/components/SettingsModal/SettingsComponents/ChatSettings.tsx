@@ -154,7 +154,15 @@ export default function ChatSettings() {
   };
 
   const modelOptions = {
-    openai: ["gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"],
+    openai: [
+      "gpt-3.5-turbo",
+      "gpt-4o",
+      "gpt-4o-mini",
+      "o1-preview",
+      "o1-mini",
+      "o1",
+      "o3-mini-2025-01-31",
+    ],
     anthropic: [
       "claude-3-5-sonnet-20241022",
       "claude-3-5-haiku-20241022",
@@ -541,8 +549,40 @@ export default function ChatSettings() {
             />
           </div>
         </div>
+        {settings.model === "o3-mini-2025-01-31" && (
+          <div className="grid grid-cols-4 items-center gap-4 py-2">
+            <Label
+              htmlFor="reasoningEffort"
+              className="text-right text-sm font-medium"
+            >
+              Reasoning
+            </Label>
+            <Select
+              value={settings.reasoningEffort ?? "medium"}
+              onValueChange={(value) => {
+                setSettings((prev) => ({ ...prev, reasoningEffort: value }));
+                if (activeUser) {
+                  window.electron.updateUserSettings({
+                    userId: activeUser.id,
+                    reasoningEffort: value,
+                  });
+                }
+              }}
+            >
+              <SelectTrigger className="col-span-3 bg-background">
+                <SelectValue placeholder="Select reasoning effort" />
+              </SelectTrigger>
+              <SelectContent className="bg-background">
+                <SelectGroup>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
-
       <div className="flex flex-col space-y-4 pt-6 border-t">
         <div className="flex justify-end space-x-2">
           <Button variant="outline" onClick={() => setSettingsOpen(false)}>
