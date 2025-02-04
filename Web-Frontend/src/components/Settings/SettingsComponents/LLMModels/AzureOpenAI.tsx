@@ -39,7 +39,7 @@ export default function AzureOpenAI() {
           baseUrl: customBaseUrl,
           model: customModel,
         },
-        activeUser.id
+        Number(activeUser.id)
       );
 
       await createApiKey(
@@ -48,7 +48,7 @@ export default function AzureOpenAI() {
           key: apiKeyInput,
           provider: "azure open ai",
         },
-        activeUser.id
+        Number(activeUser.id)
       );
       toast({
         title: "Custom provider added",

@@ -16,7 +16,7 @@ datasource db {
 model users {
   id                  Int                   @id @default(autoincrement())
   name                String
-  created_at          Int                   @default(dbgenerated("strftime('%s', 'now')"))
+  created_at          DateTime              @default(now())
   web_user            web_user?
   accounts            account[]
   settings            settings[]
@@ -24,7 +24,7 @@ model users {
   conversations       conversations[]
   messages            messages[]
   collections         collections[]
-  dev_api_key         dev_api_key[]
+  dev_api_keys        dev_api_keys[]
   user_tools          user_tools[]
   openrouter_models   openrouter_models[]
   azure_openai_models azure_openai_models[]
@@ -33,16 +33,16 @@ model users {
 }
 
 model web_user {
-  id         Int     @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   username   String
   picture    String?
-  email      String? @unique
+  email      String?  @unique
   password   String?
   image      String?
-  user_id    Int     @unique
-  user       users   @relation(fields: [user_id], references: [id])
-  created_at Int     @default(dbgenerated("strftime('%s', 'now')"))
-  updatedAt  Int     @default(dbgenerated("strftime('%s', 'now')"))
+  user_id    Int      @unique
+  user       users    @relation(fields: [user_id], references: [id])
+  created_at DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 }
 
 model account {
@@ -153,7 +153,7 @@ model collections {
   messages              messages[]
 }
 
-model dev_api_key {
+model dev_api_keys {
   id         Int       @id @default(autoincrement())
   name       String
   key        String

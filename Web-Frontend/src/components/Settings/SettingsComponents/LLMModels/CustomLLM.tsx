@@ -31,7 +31,7 @@ export default function CustomLLM() {
           isLocal: false,
           selectedCustomId: 0,
         },
-        activeUser.id
+        Number(activeUser.id)
       );
       toast({
         title: "Custom provider added",

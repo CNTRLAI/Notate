@@ -3,7 +3,7 @@ import { useUser } from "@/src/context/useUser";
 import { useEffect } from "react";
 import { useRef } from "react";
 import { useState } from "react";
-import { Message } from "@/src/types/messages";
+import { useLibrary } from "../context/useLibrary";
 
 export function useChatLogic() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -12,7 +12,6 @@ export function useChatLogic() {
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [hasUserScrolled, setHasUserScrolled] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
-
   const {
     handleResetChat: originalHandleResetChat,
     agentActions,
@@ -25,8 +24,11 @@ export function useChatLogic() {
     setMessages,
     currentRequestId,
     setCurrentRequestId,
+    activeUser,
+    title,
+    activeConversation,
   } = useUser();
-
+  const { selectedCollection } = useLibrary();
   const { isLoading, setIsLoading } = useChatInput();
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
@@ -90,7 +92,6 @@ export function useChatLogic() {
 
     if (scrollElement) {
       scrollElement.addEventListener("scroll", handleScroll, { passive: true });
-      // Initial check when component mounts
       handleScroll();
       return () => {
         scrollElement.removeEventListener("scroll", handleScroll);
@@ -102,95 +103,103 @@ export function useChatLogic() {
     let newMessage: string = "";
     let newReasoning: string = "";
     let eventSource: EventSource | null = null;
-    let isSubscribed = true;
 
     if (isLoading && currentRequestId) {
+      // First establish SSE connection
       eventSource = new EventSource(
         `/api/chat/stream?requestId=${currentRequestId}`
       );
 
       eventSource.onmessage = (event) => {
-        if (!isSubscribed) return;
         try {
           const data = JSON.parse(event.data);
-
-          if (data.type === "reasoning") {
+          if (data.type === "content") {
+            newMessage += data.content;
+            setStreamingMessage(newMessage);
+          } else if (data.type === "reasoning") {
             newReasoning += data.content;
             setStreamingMessageReasoning(newReasoning);
           } else if (data.type === "agent") {
             setAgentActions(data.content);
-          } else if (data.type === "content") {
-            newMessage += data.content;
-            setStreamingMessage(newMessage);
           } else if (data.type === "complete") {
-            const finalMessage = newMessage;
-            const finalReasoning = newReasoning;
-
-            setMessages((prevMessages: Message[]) => {
-              const lastMessage = prevMessages[prevMessages.length - 1];
-              if (!lastMessage || lastMessage.role === "user") {
-                return [
-                  ...prevMessages,
-                  {
-                    role: "assistant",
-                    content: finalMessage,
-                    reasoning_content: finalReasoning,
-                    timestamp: new Date(),
-                  },
-                ];
-              } else if (lastMessage.role === "assistant") {
-                const updatedMessage = {
-                  ...lastMessage,
-                  content: finalMessage,
-                  reasoning_content: finalReasoning,
-                };
-                return [...prevMessages.slice(0, -1), updatedMessage];
-              }
-              return prevMessages;
-            });
-
-            if (!hasUserScrolled) {
-              requestAnimationFrame(() => {
-                if (!isSubscribed) return;
-                const scrollElement = scrollAreaRef.current?.querySelector(
-                  "[data-radix-scroll-area-viewport]"
-                );
-                if (scrollElement) {
-                  scrollElement.scrollTo({
-                    top: scrollElement.scrollHeight,
-                    behavior: "instant",
-                  });
+            const result = data;
+            if (result.messages && result.messages.length > 0) {
+              const assistantMessage =
+                result.messages[result.messages.length - 1];
+              setMessages((prevMessages) => {
+                const lastMessage = prevMessages[prevMessages.length - 1];
+                if (!lastMessage || lastMessage.role === "user") {
+                  return [
+                    ...prevMessages,
+                    {
+                      ...assistantMessage,
+                      timestamp: new Date(),
+                    },
+                  ];
+                } else if (lastMessage.role === "assistant") {
+                  return [...prevMessages.slice(0, -1), assistantMessage];
                 }
-                setStreamingMessage("");
-                setStreamingMessageReasoning("");
-                setIsLoading(false);
-                setCurrentRequestId(null);
+                return prevMessages;
               });
-            } else {
-              setStreamingMessage("");
-              setStreamingMessageReasoning("");
-              setIsLoading(false);
-              setCurrentRequestId(null);
             }
-
+            setStreamingMessage("");
+            setStreamingMessageReasoning("");
+            setAgentActions("");
+            setIsLoading(false);
+            setCurrentRequestId(null);
             eventSource?.close();
           }
         } catch (error) {
           console.error("Error parsing SSE data:", error);
+          setIsLoading(false);
+          setCurrentRequestId(null);
+          eventSource?.close();
         }
       };
 
       eventSource.onerror = (error) => {
         console.error("SSE Error:", error);
-        eventSource?.close();
+        setStreamingMessage("");
+        setStreamingMessageReasoning("");
+        setAgentActions("");
         setIsLoading(false);
         setCurrentRequestId(null);
+        eventSource?.close();
       };
+
+      // Then send the chat request
+      fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          requestId: currentRequestId,
+          userId: activeUser?.id,
+          message: messages[messages.length - 1]?.content,
+          conversationId: activeConversation,
+          title: title || "",
+          collectionId: selectedCollection?.id,
+          onReasoning: (content: string) => {
+            if (content === "complete") {
+              setStreamingMessageReasoning("");
+            } else {
+              setStreamingMessageReasoning((prev) => prev + content);
+            }
+          },
+        }),
+      }).catch((error) => {
+        console.error("Chat request error:", error);
+        setIsLoading(false);
+        setCurrentRequestId(null);
+        eventSource?.close();
+      });
     }
 
     return () => {
-      isSubscribed = false;
-      eventSource?.close();
+      if (eventSource) {
+        eventSource.close();
+      }
     };
   }, [
     isLoading,
@@ -201,7 +210,11 @@ export function useChatLogic() {
     setStreamingMessageReasoning,
     setAgentActions,
     setCurrentRequestId,
-    hasUserScrolled,
+    activeUser,
+    activeConversation,
+    title,
+    selectedCollection,
+    messages,
   ]);
 
   const handleResetChat = async () => {

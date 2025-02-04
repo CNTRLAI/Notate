@@ -8,7 +8,7 @@ import { toast } from "@/src/hooks/use-toast";
 import { useState } from "react";
 
 export default function Openrouter() {
-  const { openRouterModels, activeUser, fetchOpenRouterModels } = useUser();
+  const { openRouterModels, activeUser } = useUser();
   const [openRouterModel, setOpenRouterModel] = useState<string>("");
   const [openRouterKey, setOpenRouterKey] = useState<string>("");
   const [hasOpenRouter, setHasOpenRouter] = useState<boolean>(
@@ -24,7 +24,7 @@ export default function Openrouter() {
         key: openRouterKey,
         provider: "openrouter",
       },
-      activeUser.id
+      Number(activeUser.id)
     );
     await updateSetting(
       {
@@ -32,7 +32,7 @@ export default function Openrouter() {
         provider: "openrouter",
         model: openRouterModel,
       },
-      activeUser.id
+      Number(activeUser.id)
     );
     setHasOpenRouter(true);
     setOpenRouterKey("");
@@ -60,9 +60,8 @@ export default function Openrouter() {
           provider: "openrouter",
           model: openRouterModel,
         },
-        activeUser.id
+        Number(activeUser.id)
       );
-      await fetchOpenRouterModels();
       toast({
         title: "Model Added",
         description: "Your OpenRouter model has been added",

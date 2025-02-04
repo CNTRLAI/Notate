@@ -25,7 +25,8 @@ export const getApiKey = async (userId: number, provider: string) => {
 export const createApiKey = async (apiKey: ApiKey, user_id: number) => {
   const newApiKey = await db.api_keys.create({
     data: {
-      ...apiKey,
+      key: apiKey.key,
+      provider: apiKey.provider,
       user_id: user_id,
     },
   });
@@ -51,7 +52,7 @@ export const updateApiKey = async (apiKey: ApiKey, user_id: number) => {
 };
 
 export const deleteDevAPIKey = async (user_id: number, id: number) => {
-  const deletedDevAPIKey = await db.dev_api_key.delete({
+  const deletedDevAPIKey = await db.dev_api_keys.delete({
     where: { id, user_id },
   });
   return deletedDevAPIKey;
@@ -62,7 +63,7 @@ export const createDevAPIKey = async (
   user_id: number,
   expiration: string | null
 ) => {
-  const newDevAPIKey = await db.dev_api_key.create({
+  const newDevAPIKey = await db.dev_api_keys.create({
     data: {
       ...devAPIKey,
       user_id: user_id,
@@ -73,7 +74,7 @@ export const createDevAPIKey = async (
 };
 
 export const getDevAPIKeys = async (user_id: number) => {
-  const devAPIKeys = await db.dev_api_key.findMany({
+  const devAPIKeys = await db.dev_api_keys.findMany({
     where: { user_id },
   });
   return devAPIKeys;

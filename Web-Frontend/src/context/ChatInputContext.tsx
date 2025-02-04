@@ -11,7 +11,6 @@ export interface ChatInputContextType {
     collectionId: number | undefined,
     suggestion?: string
   ) => Promise<void>;
-  cancelRequest: () => Promise<void>;
 }
 
 export const ChatInputContext = createContext<ChatInputContextType | undefined>(

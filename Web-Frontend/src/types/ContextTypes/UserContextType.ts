@@ -44,8 +44,6 @@ export interface UserContextType {
   fetchPrompts: () => Promise<void>;
   error: string | null;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
-  currentRequestId: number | null;
-  setCurrentRequestId: React.Dispatch<React.SetStateAction<number | null>>;
   agentActions: string;
   setAgentActions: React.Dispatch<React.SetStateAction<string>>;
   fetchMessages: () => Promise<void>;
@@ -57,7 +55,6 @@ export interface UserContextType {
   setAzureModels: React.Dispatch<React.SetStateAction<AzureModel[]>>;
   customModels: CustomModel[];
   setCustomModels: React.Dispatch<React.SetStateAction<CustomModel[]>>;
-  fetchOpenRouterModels: () => Promise<void>;
   fetchAzureModels: () => Promise<void>;
   fetchCustomModels: () => Promise<void>;
   streamingMessageReasoning: string | null;
@@ -72,4 +69,6 @@ export interface UserContextType {
   userTools: UserTool[];
   setUserTools: React.Dispatch<React.SetStateAction<UserTool[]>>;
   toggleTool: (tool: UserTool) => void;
+  currentRequestId: string | null;
+  setCurrentRequestId: React.Dispatch<React.SetStateAction<string | null>>;
 }

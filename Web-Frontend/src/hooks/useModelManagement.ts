@@ -5,7 +5,6 @@ import { UserTool, Tool } from "../types/tools";
 import {
   getAzureOpenAIModels,
   getCustomModels,
-  getOpenRouterModels,
 } from "../data/models";
 import { getSystemTools, updateUserTool, createUserTool } from "../data/tools";
 
@@ -18,11 +17,6 @@ export const useModelManagement = (activeUser: User | null) => {
   const [tools, setTools] = useState<Tool[]>([]);
   const [userTools, setUserTools] = useState<UserTool[]>([]);
   const [systemTools, setSystemTools] = useState<Tool[]>([]);
-  const fetchOpenRouterModels = useCallback(async () => {
-    if (!activeUser?.id || activeUser.id === undefined) return;
-    const models = await getOpenRouterModels(Number(activeUser.id));
-    setOpenRouterModels(models.map((m) => m.model));
-  }, [activeUser]);
 
   const fetchAzureModels = useCallback(async () => {
     if (!activeUser?.id || activeUser.id === undefined) return;
@@ -151,7 +145,6 @@ export const useModelManagement = (activeUser: User | null) => {
     setAzureModels,
     customModels,
     setCustomModels,
-    fetchOpenRouterModels,
     fetchAzureModels,
     fetchCustomModels,
     tools,

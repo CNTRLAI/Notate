@@ -18,7 +18,6 @@ export default function Ollama() {
     setSettings,
     ollamaModels,
     setOllamaModels,
-    handleRunOllama,
     localModalLoading,
     ollamaInit,
     setOllamaInit,
@@ -52,11 +51,11 @@ export default function Ollama() {
                   ...settings,
                   ollamaIntegration: newIntegrationValue,
                 },
-                activeUser.id
+                Number(activeUser.id)
               );
 
               if (newIntegrationValue === 1) {
-                await handleOllamaIntegration(activeUser);
+                await handleOllamaIntegration(Number(activeUser.id));
                 setOllamaInit(true);
               } else {
                 setOllamaModels([]);
@@ -88,9 +87,9 @@ export default function Ollama() {
             disabled={!selectedModel || localModalLoading}
             className=""
             onClick={() => {
-              if (activeUser) {
+              /*   if (activeUser) {
                 handleRunOllama(selectedModel, activeUser);
-              }
+              } */
             }}
           >
             {localModalLoading ? (

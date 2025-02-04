@@ -110,7 +110,7 @@ export const ChatMessage = memo(function ChatMessage({
                             {result.metadata.title ||
                               getFileName(result.metadata.source)}
                           </a>
-                        ) : result.metadata.source.startsWith("http") ? (
+                        ) : result.metadata?.source?.startsWith("http") ? (
                           <a
                             href={result.metadata.source}
                             target="_blank"
@@ -123,7 +123,7 @@ export const ChatMessage = memo(function ChatMessage({
                         ) : (
                           <span>
                             {result.metadata.title ||
-                              getFileName(result.metadata.source)}
+                              getFileName(result.metadata?.source || "")}
                           </span>
                         )}
                       </span>

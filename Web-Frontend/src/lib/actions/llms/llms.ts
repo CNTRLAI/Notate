@@ -6,40 +6,28 @@ import { getSettingById } from "@/src/data/settings";
 import { createMessage } from "@/src/data/messages";
 import { providersMap } from "./llmHelpers/providersMap";
 import db from "@/src/lib/db";
-import { ChatStreamHandler } from "@/src/lib/chat/streamHandler";
-import { UserSettings } from "@/src/types/settings";
 import { getPromptById } from "@/src/data/settings";
 import { ChatRequestResult } from "@/src/types/providers";
+import { ChatStreamCallbacks } from "../chat";
 
 export async function chatRequest(
   messages: Message[],
   activeUser: User,
   conversationId?: number,
-  title?: string,
   collectionId?: bigint | number,
-  signal?: AbortSignal,
-  requestId?: string
+  title?: string,
+  requestId?: string,
+  callbacks?: ChatStreamCallbacks
 ): Promise<ChatRequestResult> {
-  let streamHandler: ChatStreamHandler | undefined;
-
   try {
-    if (!requestId) {
-      throw new Error("Request ID is required for streaming");
-    }
-
-    streamHandler = new ChatStreamHandler(requestId);
-
-    const userSettings = {
-      ...(await getSettingById(activeUser.id)),
-      promptId: (await getSettingById(activeUser.id))?.promptId || "",
-    } as UserSettings;
-
+    console.log(activeUser.id);
+    const userSettings = await getSettingById(Number(activeUser.id));
+    console.log("User settings created", userSettings);
     if (!userSettings) {
       throw new Error(
         "No user settings found. Please configure your settings first."
       );
     }
-
     if (!title && conversationId) {
       const conversation = await db.conversations.findUnique({
         where: { id: conversationId },
@@ -47,7 +35,7 @@ export async function chatRequest(
       });
       title = conversation?.title;
     }
-
+    console.log("Title", title);
     if (!conversationId) {
       const newConversation = await db.conversations.create({
         data: {
@@ -59,7 +47,7 @@ export async function chatRequest(
       conversationId = newConversation.id;
       title = newConversation.title;
     }
-
+    console.log("Conversation ID", conversationId);
     let data;
     if (collectionId) {
       const collection = await db.collections.findUnique({
@@ -69,15 +57,23 @@ export async function chatRequest(
         data = collection;
       }
     }
+    console.log("Data", data);
     let prompt;
-    if (userSettings.prompt) {
-      prompt = await getPromptById(userSettings.prompt);
+    if (userSettings.promptId) {
+      console.log("User settings prompt ID", userSettings.promptId);
+      if (userSettings.promptId === "default") {
+        prompt =
+          "You are a helpful assistant that can answer questions and help with tasks.";
+      } else {
+        prompt = await getPromptById(Number(userSettings.promptId));
+      }
     }
+    console.log("Prompt", prompt);
     const provider =
       providersMap[
         userSettings.provider?.toLowerCase() as keyof typeof providersMap
       ];
-
+    console.log("Provider", provider);
     if (!provider) {
       throw new Error(
         "No AI provider selected. Please open Settings and make sure you add an API key and select a provider under the 'AI Provider' tab."
@@ -95,13 +91,12 @@ export async function chatRequest(
       throw new Error("Conversation ID is required");
     }
 
-    streamHandler.sendReasoning("Initializing AI provider...");
-
+    console.log("Provider", provider);
     const result = await provider({
       messages,
       activeUser,
       userSettings,
-      prompt: prompt ? prompt.prompt : "",
+      prompt: prompt ? (prompt as { prompt: string }).prompt : "",
       conversationId,
       currentTitle: title,
       collectionId: collectionId ? Number(collectionId) : undefined,
@@ -126,17 +121,7 @@ export async function chatRequest(
                 metadata: "nothing",
               },
             ],
-          },
-      signal,
-      onContent: (content: string) => {
-        streamHandler?.sendContent(content);
-      },
-      onReasoning: (reasoning: string) => {
-        streamHandler?.sendReasoning(reasoning);
-      },
-      onAgentAction: (action: string) => {
-        streamHandler?.sendAgentAction(action);
-      },
+          }
     });
 
     // Save messages to database
@@ -162,8 +147,6 @@ export async function chatRequest(
       activeUser.id,
       conversationId
     );
-
-    streamHandler.complete();
 
     return {
       ...result,
@@ -194,8 +177,6 @@ export async function chatRequest(
         errorMessage = error.message;
       }
     }
-
-    streamHandler?.error(errorMessage);
 
     const newMessage = {
       role: "assistant",

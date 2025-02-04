@@ -33,6 +33,7 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   >([]);
   const [prompts, setPrompts] = useState<UserPrompts[]>([]);
   const [devAPIKeys, setDevAPIKeys] = useState<DevApiKey[]>([]);
+  const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
 
   // Initialize conversation management first
   const {
@@ -55,13 +56,10 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     isLoading,
     error,
     handleChatRequest: baseChatRequest,
-    cancelRequest,
     setMessages,
     setStreamingMessage,
     setStreamingMessageReasoning,
     setError,
-    currentRequestId,
-    setCurrentRequestId,
     setIsLoading,
     input,
     setInput,
@@ -73,7 +71,6 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     openRouterModels,
     azureModels,
     customModels,
-    fetchOpenRouterModels,
     fetchAzureModels,
     fetchCustomModels,
     setOpenRouterModels,
@@ -144,14 +141,12 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [activeConversation, conversations, activeUser, setMessages]);
 
   const handleResetChat = useCallback(async () => {
-    await cancelRequest();
     setMessages([]);
     setStreamingMessage("");
     setStreamingMessageReasoning("");
     setIsLoading(false);
     setActiveConversation(null);
   }, [
-    cancelRequest,
     setMessages,
     setStreamingMessage,
     setStreamingMessageReasoning,
@@ -167,9 +162,8 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       isLoading,
       setIsLoading,
       handleChatRequest: baseChatRequest,
-      cancelRequest,
     }),
-    [input, setInput, isLoading, setIsLoading, baseChatRequest, cancelRequest]
+    [input, setInput, isLoading, setIsLoading, baseChatRequest]
   );
 
   // Memoize the main context value
@@ -210,8 +204,6 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       fetchMessages,
       error,
       setError,
-      currentRequestId,
-      setCurrentRequestId,
       openRouterModels,
       setOpenRouterModels,
       apiKeyInput,
@@ -220,7 +212,6 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       setAzureModels,
       customModels,
       setCustomModels,
-      fetchOpenRouterModels,
       fetchAzureModels,
       fetchCustomModels,
       streamingMessageReasoning,
@@ -238,6 +229,8 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       setUserTools,
       toggleTool,
       activeUser,
+      currentRequestId,
+      setCurrentRequestId,
     }),
     [
       activeUser,
@@ -262,18 +255,15 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       fetchPrompts,
       fetchMessages,
       error,
-      currentRequestId,
       openRouterModels,
       apiKeyInput,
       azureModels,
       customModels,
-      fetchOpenRouterModels,
       fetchAzureModels,
       fetchCustomModels,
       streamingMessageReasoning,
       setActiveConversation,
       setAlertForUser,
-      setCurrentRequestId,
       setError,
       setIsSearchOpen,
       setMessages,
@@ -298,6 +288,8 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       userTools,
       setUserTools,
       toggleTool,
+      currentRequestId,
+      setCurrentRequestId,
     ]
   );
 

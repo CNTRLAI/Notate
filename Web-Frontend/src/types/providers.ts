@@ -39,15 +39,16 @@ export interface ProviderInputParams {
       metadata: string;
     }[];
   };
-  signal?: AbortSignal;
   onContent?: (content: string) => void;
   onReasoning?: (reasoning: string) => void;
   onAgentAction?: (action: string) => void;
 }
+
 export type ChatRequestResult = {
   id: bigint | number;
   messages: Message[];
   title?: string;
   reasoning_content?: string;
   data_content?: string;
+  error?: string;
 };

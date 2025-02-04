@@ -20,6 +20,7 @@ export async function openAiChainOfThought(
   dataCollectionInfo: Collection | null,
   agentActions?: string,
   webSearchResult?: WebSearchResult | null,
+  onReasoning?: (content: string) => void,
   signal?: AbortSignal
 ) {
   console.log("agentActions", agentActions);
@@ -65,6 +66,13 @@ export async function openAiChainOfThought(
     }
     const content = chunk.choices[0]?.delta?.content || "";
     reasoningContent += content;
+    if (onReasoning) {
+      onReasoning(content);
+    }
+  }
+
+  if (onReasoning) {
+    onReasoning("complete");
   }
 
   return webSearchResult

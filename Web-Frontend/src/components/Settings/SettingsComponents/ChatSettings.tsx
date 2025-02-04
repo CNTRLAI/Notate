@@ -49,7 +49,6 @@ export default function ChatSettings() {
     setSettings,
     setSettingsOpen,
     localModels,
-    handleRunModel,
     maxTokens,
     setMaxTokens,
     ollamaModels,
@@ -73,7 +72,7 @@ export default function ChatSettings() {
             ...settings,
             maxTokens: parsedValue,
           },
-          activeUser.id
+          Number(activeUser.id)
         );
         setSettings((prev) => ({ ...prev, maxTokens: parsedValue }));
       }
@@ -93,7 +92,7 @@ export default function ChatSettings() {
         provider: provider.toLowerCase(),
         model: model_name,
       },
-      activeUser.id
+      Number(activeUser.id)
     );
     if (provider === "ollama") {
       await updateSetting(
@@ -101,7 +100,7 @@ export default function ChatSettings() {
           ...settings,
           ollamaModel: model_name,
         },
-        activeUser.id
+        Number(activeUser.id)
       );
     }
     if (provider === "azure open ai") {
@@ -114,7 +113,7 @@ export default function ChatSettings() {
           selectedAzureId:
             azureModels?.find((model) => model.name === model_name)?.id ?? 0,
         },
-        activeUser.id
+        Number(activeUser.id)
       );
     }
     if (provider === "custom") {
@@ -130,7 +129,7 @@ export default function ChatSettings() {
           selectedCustomId:
             customModels?.find((model) => model.name === model_name)?.id ?? 0,
         },
-        activeUser.id
+        Number(activeUser.id)
       );
     }
 
@@ -188,25 +187,28 @@ export default function ChatSettings() {
   const handleAddPrompt = async () => {
     if (activeUser) {
       const newPromptObject = await addUserPrompt(
-        activeUser.id,
+        Number(activeUser.id),
         newPrompt,
         newPrompt
       );
       await updateSetting(
         {
           ...settings,
-          promptId: newPromptObject.id,
+          promptId: newPromptObject.id.toString(),
         },
-        activeUser.id
+        Number(activeUser.id)
       );
-      setSettings((prev) => ({ ...prev, promptId: newPromptObject.id }));
+      setSettings((prev) => ({
+        ...prev,
+        promptId: newPromptObject.id.toString(),
+      }));
       setPrompts((prev) => [
         ...prev,
         {
           id: newPromptObject.id,
           name: newPromptObject.name,
           prompt: newPromptObject.prompt,
-          userId: activeUser.id,
+          user_id: Number(activeUser.id),
         },
       ]);
     }
@@ -304,18 +306,20 @@ export default function ChatSettings() {
                                 updateSetting(
                                   {
                                     ...settings,
-                                    promptId:
+                                    promptId: String(
                                       prompts.find(
                                         (p) => p.name === currentValue
-                                      )?.id ?? 0,
+                                      )?.id ?? "1"
+                                    ),
                                   },
-                                  activeUser.id
+                                  Number(activeUser.id)
                                 );
                                 setSettings((prev) => ({
                                   ...prev,
-                                  promptId:
+                                  promptId: String(
                                     prompts.find((p) => p.name === currentValue)
-                                      ?.id ?? 0,
+                                      ?.id ?? "1"
+                                  ),
                                 }));
                               }
                               toast({
@@ -402,11 +406,11 @@ export default function ChatSettings() {
                         localModels.find((model) => model.name === value)
                           ?.model_location ?? "",
                     },
-                    activeUser.id
+                    Number(activeUser.id)
                   );
                 }
                 await handleProviderModelChange(provider, value);
-                await fetchSettings(activeUser);
+                await fetchSettings(Number(activeUser.id));
 
                 const newMaxTokens =
                   modelTokenDefaults[
@@ -433,12 +437,12 @@ export default function ChatSettings() {
                     description: `Loading ${value}...`,
                   });
                   if (selectedModelPath && selectedModelType) {
-                    await handleRunModel(
+                    /*    await handleRunModel(
                       value,
                       selectedModelPath,
                       selectedModelType,
-                      activeUser.id.toString()
-                    );
+                      activeUser.id
+                    ); */
                   }
                 } else if (modelOptions.ollama.includes(value)) {
                   toast({
@@ -535,7 +539,7 @@ export default function ChatSettings() {
                         ...settings,
                         temperature: value[0],
                       },
-                      activeUser.id
+                      Number(activeUser.id)
                     );
                   }
                 }}
@@ -582,7 +586,7 @@ export default function ChatSettings() {
                     model: settings.model ?? "",
                     provider: settings.provider ?? "",
                   },
-                  activeUser.id
+                  Number(activeUser.id)
                 );
               }
 

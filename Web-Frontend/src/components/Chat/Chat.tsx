@@ -8,6 +8,10 @@ import { LoadingIndicator } from "./ChatComponents/LoadingIndicator";
 import { useChatInput } from "@/src/context/useChatInput";
 import { useUser } from "@/src/context/useUser";
 import { useChatLogic } from "@/src/hooks/useChatLogic";
+import { useEffect } from "react";
+import { useSysSettings } from "@/src/context/useSysSettings";
+import { useLibrary } from "@/src/context/useLibrary";
+import { initializeShiki } from "@/src/lib/shikiHighlight";
 
 export default function Chat() {
   const {
@@ -18,10 +22,54 @@ export default function Chat() {
     scrollToBottom,
   } = useChatLogic();
 
-  const { streamingMessage, streamingMessageReasoning, messages, error } =
-    useUser();
+  const { fetchSettings } = useSysSettings();
+
+  const {
+    streamingMessage,
+    streamingMessageReasoning,
+    messages,
+    error,
+    activeUser,
+    getUserConversations,
+    fetchApiKey,
+    fetchPrompts,
+    fetchDevAPIKeys,
+    fetchAzureModels,
+    fetchCustomModels,
+    fetchTools,
+    fetchSystemTools,
+  } = useUser();
+
+  const { fetchCollections } = useLibrary();
 
   const { isLoading } = useChatInput();
+
+  useEffect(() => {
+    const initializeUserData = async () => {
+      if (!activeUser?.id) return;
+      
+      try {
+        console.log("Initializing app for user", activeUser.id);
+        await Promise.all([
+          initializeShiki(),
+          fetchSettings(Number(activeUser.id)),
+          getUserConversations(),
+          fetchApiKey(),
+          fetchPrompts(),
+          fetchDevAPIKeys(),
+          fetchCollections(),
+          fetchAzureModels(),
+          fetchCustomModels(),
+          fetchTools(),
+          fetchSystemTools()
+        ]);
+      } catch (error) {
+        console.error("Error initializing user data:", error);
+      }
+    };
+
+    initializeUserData();
+  }, [activeUser?.id]);
 
   return (
     <div className="pt-5 h-[calc(100vh-1rem)] flex flex-col">

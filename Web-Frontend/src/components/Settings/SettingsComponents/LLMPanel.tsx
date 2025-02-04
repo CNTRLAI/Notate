@@ -26,6 +26,7 @@ import { Search } from "lucide-react";
 import { createApiKey } from "@/src/data/apiKeys";
 import { LLMProvider } from "@/src/types/providers";
 import { updateSetting } from "@/src/data/settings";
+import { keyValidation } from "@/src/lib/actions/llms/keyValidation";
 // Provider categories for better organization
 const providerCategories = {
   "Cloud Providers": ["openai", "anthropic", "gemini", "deepseek", "xai"],
@@ -57,11 +58,11 @@ export default function LLMPanel() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedApiKey = apiKeyInput.trim();
-    /*   const result = await window.electron.keyValidation({
+    const result = await keyValidation({
       apiKey: trimmedApiKey,
       inputProvider: selectedProvider.toLowerCase(),
-    }); */
-    const result = { error: false };
+    });
+    console.log(result);
     if (result.error) {
       toast({
         title: "Invalid API Key",
@@ -79,7 +80,7 @@ export default function LLMPanel() {
           key: trimmedApiKey,
           provider: selectedProvider.toLowerCase(),
         },
-        activeUser.id
+        Number(activeUser.id)
       );
       if (!apiKeys.some((key) => key.provider === selectedProvider)) {
         setApiKeys((prevKeys) => [
@@ -109,7 +110,7 @@ export default function LLMPanel() {
     }));
     try {
       if (activeUser) {
-        await updateSetting(
+        const updatedSetting = await updateSetting(
           {
             ...settings,
             provider: provider,
@@ -118,8 +119,9 @@ export default function LLMPanel() {
                 provider as keyof typeof defaultProviderModel
               ],
           },
-          activeUser.id
+          Number(activeUser.id)
         );
+        console.log(updatedSetting);
         if (provider === "openrouter") {
           /* await window.electron.addOpenRouterModel(
             activeUser.id,
@@ -134,7 +136,7 @@ export default function LLMPanel() {
                   provider as keyof typeof defaultProviderModel
                 ],
             },
-            activeUser.id
+            Number(activeUser.id)
           );
         }
       }

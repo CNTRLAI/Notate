@@ -38,7 +38,7 @@ export default {
           if (passwordMatch) {
             return {
               ...user,
-              id: user.id.toString(),
+              id: user.user_id.toString(),
             };
           }
         }

@@ -1,3 +1,4 @@
+"use server";
 import db from "@/src/lib/db";
 
 export const getSystemTools = async () => {
@@ -20,10 +21,21 @@ export const updateUserTool = async (
   enabled: number,
   docked: number
 ) => {
-  const userTool = await db.user_tools.update({
+  // First find the user tool record
+  const existingTool = await db.user_tools.findFirst({
     where: {
       user_id: userId,
       id: toolId,
+    },
+  });
+
+  if (!existingTool) {
+    throw new Error("User tool not found");
+  }
+
+  const userTool = await db.user_tools.update({
+    where: {
+      id: existingTool.id,
     },
     data: {
       enabled: enabled,
@@ -32,6 +44,7 @@ export const updateUserTool = async (
   });
   return userTool;
 };
+
 export const createUserTool = async (userId: number, toolId: number) => {
   const userTool = await db.user_tools.create({
     data: {

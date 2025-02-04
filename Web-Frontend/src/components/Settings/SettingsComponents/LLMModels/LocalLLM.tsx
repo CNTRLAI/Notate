@@ -127,9 +127,9 @@ export default function LocalLLM() {
             if (!activeUser || !selectedModel) return;
             const type = selectedModel.type;
             const model = selectedModel.name;
-            const user_id = activeUser.id.toString();
+            const user_id = Number(activeUser.id);
             const model_location = selectedModel.model_location;
-            handleRunModel(model, model_location, type, user_id);
+            handleRunModel(model, model_location, type, user_id.toString());
           }}
         >
           {localModalLoading ? (

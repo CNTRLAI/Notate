@@ -51,7 +51,7 @@ export function DevIntegration() {
 
   const handleDeleteKey = async (id: number) => {
     if (!activeUser) return;
-    await deleteDevAPIKey(activeUser.id, id);
+    await deleteDevAPIKey(Number(activeUser.id), id);
     setDevAPIKeys(devAPIKeys.filter((key) => key.id !== id));
   };
 
@@ -64,7 +64,7 @@ export function DevIntegration() {
         expiration: expiration === "never" ? null : expiration ?? null,
         id: 0,
       },
-      activeUser.id,
+      Number(activeUser.id),
       expiration === "never" ? null : expiration ?? null
     );
     setDevAPIKeys([...devAPIKeys, results as DevApiKey]);

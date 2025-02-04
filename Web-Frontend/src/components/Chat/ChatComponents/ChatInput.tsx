@@ -29,14 +29,8 @@ import { WebAudioRecorder } from "@/src/utils/webAudioRecorder";
 
 export const ChatInput = memo(function ChatInput() {
   const { activeUser, toggleTool, userTools } = useUser();
-  const {
-    handleChatRequest,
-    cancelRequest,
-    input,
-    setInput,
-    isLoading,
-    setIsLoading,
-  } = useChatInput();
+  const { handleChatRequest, input, setInput, isLoading, setIsLoading } =
+    useChatInput();
   const { openLibrary, setOpenLibrary } = useLibrary();
   const [isRecording, setIsRecording] = useState(false);
   const [transcriptionLoading, setTranscriptionLoading] = useState(false);
@@ -127,7 +121,6 @@ export const ChatInput = memo(function ChatInput() {
   // Memoize the send button handler
   const handleSendClick = useCallback(async () => {
     if (isLoading) {
-      cancelRequest();
       setIsLoading(false);
     } else if (input.trim()) {
       console.log("handleSendClick");
@@ -136,7 +129,6 @@ export const ChatInput = memo(function ChatInput() {
   }, [
     isLoading,
     input,
-    cancelRequest,
     handleChatRequest,
     selectedCollection?.id,
     setIsLoading,

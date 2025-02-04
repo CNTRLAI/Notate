@@ -27,7 +27,8 @@ async function chainOfThought(
     }[];
   } | null,
   dataCollectionInfo: Collection | null,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  onReasoning?: (content: string) => void
 ) {
   const reasoningPrompt = await returnReasoningPrompt(data, dataCollectionInfo);
 
@@ -56,11 +57,23 @@ async function chainOfThought(
       if (signal?.aborted) {
         throw new Error("AbortError");
       }
-      if (chunk.type === "content_block_delta") {
-        const content = "text" in chunk.delta ? chunk.delta.text : "";
+      if (
+        chunk.type === "content_block_delta" &&
+        chunk.delta &&
+        typeof chunk.delta === "object"
+      ) {
+        const content = chunk.delta.text || "";
         reasoningContent += content;
-        /*  sendMessageChunk("[REASONING]: " + content, mainWindow); */
+        // Send reasoning to frontend
+        if (onReasoning) {
+          onReasoning(content);
+        }
       }
+    }
+
+    // Send completion event for reasoning
+    if (onReasoning) {
+      onReasoning("complete");
     }
   } catch (error) {
     if (
@@ -86,7 +99,9 @@ export async function AnthropicProvider(
     currentTitle,
     collectionId,
     data,
-    signal,
+    onContent,
+    onReasoning,
+    onAgentAction,
   } = params;
 
   const apiKey = await getApiKey(activeUser.id, "anthropic");
@@ -105,11 +120,15 @@ export async function AnthropicProvider(
   // If the user has Web Search enabled, we need to do web search first
   if (userTools.find((tool) => tool.tool_id === 1)?.enabled === 1) {
     const { content: actions, webSearchResult: webResults } =
-      await anthropicAgent(anthropic, messages, maxOutputTokens, signal);
+      await anthropicAgent(anthropic, messages, maxOutputTokens);
     agentActions = actions;
     webSearchResult = webResults;
+    // Send agent actions to frontend
+    if (onAgentAction && actions) {
+      onAgentAction(actions);
+    }
   }
-  console.log("agentActions", agentActions);
+
   const newMessage: Message = {
     role: "assistant",
     content: "",
@@ -142,18 +161,13 @@ export async function AnthropicProvider(
       newMessages,
       maxOutputTokens,
       userSettings,
-      data && 'top_k' in data ? data : null,
+      data && "top_k" in data ? data : null,
       dataCollectionInfo ? dataCollectionInfo : null,
-      signal
+      undefined,
+      onReasoning
     );
-
-    // Send end of reasoning marker
-    /*     if (mainWindow) {
-      mainWindow.webContents.send("reasoningEnd");
-    }
-
- */
   }
+
   const sysPrompt = await returnSystemPrompt(
     prompt,
     dataCollectionInfo,
@@ -161,39 +175,37 @@ export async function AnthropicProvider(
     webSearchResult || undefined,
     data
   );
+
   // Truncate messages to fit within token limits
   const truncatedMessages = truncateMessages(newMessages, maxOutputTokens);
 
-  const stream = await anthropic.messages.stream(
-    {
-      temperature: Number(userSettings.temperature),
-      system: sysPrompt.content,
-      messages: truncatedMessages.map((msg) => ({
-        role: msg.role === "assistant" ? "assistant" : "user",
-        content: msg.content as string,
-      })),
-      model: userSettings.model as string,
-      max_tokens: Number(maxOutputTokens),
-    },
-    { signal }
-  );
+  const stream = await anthropic.messages.stream({
+    temperature: Number(userSettings.temperature),
+    system: sysPrompt.content,
+    messages: truncatedMessages.map((msg) => ({
+      role: msg.role === "assistant" ? "assistant" : "user",
+      content: msg.content as string,
+    })),
+    model: userSettings.model as string,
+    max_tokens: Number(maxOutputTokens),
+  });
 
   try {
     for await (const chunk of stream) {
-      if (signal?.aborted) {
-        throw new Error("AbortError");
-      }
-      if (chunk.type === "content_block_delta") {
-        const content = "text" in chunk.delta ? chunk.delta.text : "";
+      if (
+        chunk.type === "content_block_delta" &&
+        chunk.delta &&
+        typeof chunk.delta === "object"
+      ) {
+        const content = chunk.delta.text || "";
         newMessage.content += content;
-        /* sendMessageChunk(content, mainWindow); */
+        // Send content to frontend
+        if (onContent) {
+          onContent(content);
+        }
       }
     }
 
-    /*  if (mainWindow) {
-      mainWindow.webContents.send("streamEnd");
-    }
- */
     return {
       id: conversationId,
       messages: [...messages, newMessage],
@@ -203,22 +215,6 @@ export async function AnthropicProvider(
       aborted: false,
     };
   } catch (error) {
-    if (
-      signal?.aborted ||
-      (error instanceof Error && error.message === "AbortError")
-    ) {
-      /*    if (mainWindow) {
-          mainWindow.webContents.send("streamEnd");
-        } */
-      return {
-        id: conversationId,
-        messages: [...messages, { ...newMessage }],
-        title: currentTitle,
-        content: newMessage.content,
-        reasoning: reasoning || "",
-        aborted: true,
-      };
-    }
     throw error;
   }
 }

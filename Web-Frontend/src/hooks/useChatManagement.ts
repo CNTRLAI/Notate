@@ -1,6 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { Message } from "../types/messages";
 import { User } from "next-auth";
+import { streamingChatAction } from "../lib/actions/chat";
 
 export const useChatManagement = (
   activeUser: User | null,
@@ -12,88 +13,63 @@ export const useChatManagement = (
     useState<string>("");
   const [agentActions, setAgentActions] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [currentRequestId, setCurrentRequestId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [input, setInput] = useState<string>("");
+  const [isPending, startTransition] = useTransition();
 
   const handleChatRequest = useCallback(
     async (collectionId: number | undefined, suggestion?: string) => {
       if (!activeUser) return;
       setIsLoading(true);
-      const requestId = Date.now();
-      setCurrentRequestId(requestId);
-
       setError(null);
+
       const newUserMessage = {
         role: "user",
         content: suggestion || input,
         timestamp: new Date(),
       } as Message;
+
       setMessages((prev) => [...prev, newUserMessage]);
       setInput("");
 
       try {
-        // Make API request to chat endpoint
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            message: suggestion || input,
-            requestId: requestId.toString(),
-            userId: activeUser.id,
-            collectionId,
-          }),
+        startTransition(async () => {
+          try {
+            const result = await streamingChatAction(
+              [...messages, newUserMessage],
+              collectionId
+            );
+
+            if (result.error) {
+              setError(result.error);
+              setIsLoading(false);
+              console.error("Error in chat:", result.error);
+              return;
+            }
+
+            setMessages(result.messages);
+          } catch (error) {
+            console.error("Error in chat:", error);
+            setError(
+              error instanceof Error
+                ? error.message
+                : "An unexpected error occurred"
+            );
+            setIsLoading(false);
+          }
         });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || "Failed to send message");
-        }
-
-        // The actual message updates will come through the SSE connection
-        // which is handled by the useChatLogic hook
       } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
-          setError("Request was cancelled");
-        } else {
-          console.error("Error in chat:", error);
-        }
+        console.error("Error in chat:", error);
+        setError(
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred"
+        );
+        setIsLoading(false);
       }
     },
     [activeUser, messages, input, onChatComplete]
   );
-
-  const cancelRequest = useCallback(() => {
-    return new Promise<void>(async (resolve) => {
-      if (currentRequestId) {
-        try {
-          await fetch("/api/chat/abort", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              requestId: currentRequestId.toString(),
-            }),
-          });
-
-          setStreamingMessage("");
-          setStreamingMessageReasoning("");
-          setIsLoading(false);
-        } catch (error) {
-          console.error("Failed to cancel request:", error);
-        }
-      }
-      resolve();
-    });
-  }, [
-    currentRequestId,
-    setStreamingMessage,
-    setStreamingMessageReasoning,
-    setIsLoading,
-  ]);
 
   return {
     messages,
@@ -102,14 +78,11 @@ export const useChatManagement = (
     setStreamingMessage,
     streamingMessageReasoning,
     setStreamingMessageReasoning,
-    isLoading,
+    isLoading: isLoading || isPending,
     setIsLoading,
     error,
     setError,
-    currentRequestId,
-    setCurrentRequestId,
     handleChatRequest,
-    cancelRequest,
     input,
     setInput,
     agentActions,

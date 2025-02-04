@@ -4,7 +4,7 @@ import db from "@/src/lib/db";
 import { DevApiKey } from "@/src/types/apiKeys";
 
 export const getDevApiKeys = async (userId: number) => {
-  const devApiKeys = await db.dev_api_key.findMany({
+  const devApiKeys = await db.dev_api_keys.findMany({
     where: {
       user_id: userId,
     },
@@ -16,7 +16,7 @@ export const createDevApiKey = async (
   devApiKey: DevApiKey,
   user_id: number
 ) => {
-  const newDevApiKey = await db.dev_api_key.create({
+  const newDevApiKey = await db.dev_api_keys.create({
     data: {
       ...devApiKey,
       user_id: user_id,
@@ -26,7 +26,7 @@ export const createDevApiKey = async (
 };
 
 export const deleteDevApiKey = async (id: number) => {
-  const deletedDevApiKey = await db.dev_api_key.delete({
+  const deletedDevApiKey = await db.dev_api_keys.delete({
     where: { id },
   });
   return deletedDevApiKey;

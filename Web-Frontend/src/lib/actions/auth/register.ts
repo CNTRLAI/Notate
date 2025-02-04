@@ -13,15 +13,16 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
     return { error: "Invalid fields" };
   }
   const { email, password, name, username } = validateFields.data;
-  const hashedPassword = await bcrypt.hash(password, 10);
 
   try {
+    const hashedPassword = await bcrypt.hash(password, 10);
     const existingUser = await getUserByEmail(email);
+
     if (existingUser) {
       return { error: "User already exists" };
     }
-    const inputUser = await createUser(email, hashedPassword, name, username);
 
+    const inputUser = await createUser(email, hashedPassword, name, username);
     if (!inputUser) {
       return { error: "Failed to create user. Please try again." };
     }
@@ -29,6 +30,9 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
     return { success: "User created", user: inputUser };
   } catch (error) {
     console.error("Registration error:", error);
+    if (error instanceof Error) {
+      return { error: error.message };
+    }
     return { error: "An unexpected error occurred during registration" };
   }
 };

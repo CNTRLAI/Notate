@@ -1,3 +1,5 @@
+"use server";
+
 import Anthropic from "@anthropic-ai/sdk";
 export async function AnthropicProviderAPIKeyCheck(apiKey: string): Promise<{
   error?: string;

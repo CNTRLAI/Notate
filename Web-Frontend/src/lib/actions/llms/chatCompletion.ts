@@ -18,10 +18,12 @@ export async function chatCompletion(
     userSettings,
     collectionId,
     data,
-    signal,
     conversationId,
     currentTitle,
     prompt,
+    onContent,
+    onReasoning,
+    onAgentAction,
   } = params;
 
   const maxOutputTokens = (userSettings.maxTokens as number) || 4096;
@@ -40,11 +42,13 @@ export async function chatCompletion(
       openai,
       messages,
       maxOutputTokens,
-      userSettings,
-      signal
+      userSettings
     );
     agentActions = actions;
     webSearchResult = webResults;
+    if (onAgentAction && actions) {
+      onAgentAction(actions);
+    }
   }
 
   console.log(agentActions);
@@ -79,7 +83,8 @@ export async function chatCompletion(
       dataCollectionInfo ? dataCollectionInfo : null,
       String(JSON.stringify(agentActions)),
       webSearchResult ? webSearchResult : undefined,
-      signal
+      onReasoning,
+      undefined  // AbortSignal
     );
   }
 
@@ -93,16 +98,13 @@ export async function chatCompletion(
   // Truncate messages to fit within token limits while preserving max output tokens
   const truncatedMessages = truncateMessages(newMessages, maxOutputTokens);
   truncatedMessages.unshift(newSysPrompt);
-  const stream = await openai.chat.completions.create(
-    {
-      model: userSettings.model as string,
-      messages: truncatedMessages,
-      stream: true,
-      temperature: Number(userSettings.temperature),
-      max_tokens: Number(maxOutputTokens),
-    },
-    { signal }
-  );
+  const stream = await openai.chat.completions.create({
+    model: userSettings.model as string,
+    messages: truncatedMessages,
+    stream: true,
+    temperature: Number(userSettings.temperature),
+    max_tokens: Number(maxOutputTokens),
+  });
 
   const newMessage: Message = {
     role: "assistant",
@@ -113,11 +115,11 @@ export async function chatCompletion(
 
   try {
     for await (const chunk of stream) {
-      if (signal?.aborted) {
-        throw new Error("AbortError");
-      }
       const content = chunk.choices[0]?.delta?.content || "";
       newMessage.content += content;
+      if (onContent) {
+        onContent(content);
+      }
     }
 
     return {
@@ -129,19 +131,6 @@ export async function chatCompletion(
       aborted: false,
     };
   } catch (error) {
-    if (
-      signal?.aborted ||
-      (error instanceof Error && error.message === "AbortError")
-    ) {
-      return {
-        id: conversationId,
-        messages: messages,
-        reasoning: reasoning || "",
-        title: currentTitle,
-        content: "",
-        aborted: true,
-      };
-    }
     throw error;
   }
 }

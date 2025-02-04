@@ -1,3 +1,4 @@
+"use server";
 import db from "@/src/lib/db";
 
 export const getCollections = async (user_id: number) => {

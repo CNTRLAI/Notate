@@ -13,15 +13,18 @@ export const createUser = async (
   }
 
   try {
+    console.log("Creating user");
     // First create the base user
+    console.log("Creating base user", name);
     const createdUser = await db.users.create({
       data: {
         name,
       },
     });
 
-    try {
-      // Create the web user with the reference
+    // Then create the web user if we have web credentials
+    if (email && password && username) {
+      console.log("Creating web user");
       const webUser = await db.web_user.create({
         data: {
           email,
@@ -32,34 +35,18 @@ export const createUser = async (
       });
 
       return webUser;
-    } catch (webUserError) {
-      // If web user creation fails, clean up the base user
-      console.error(
-        "Error creating web user. Error details:",
-        webUserError instanceof Error
-          ? {
-              name: webUserError.name,
-              message: webUserError.message,
-            }
-          : "Unknown error"
-      );
-
-      await db.users
-        .delete({
-          where: { id: createdUser.id },
-        })
-        .catch((deleteError) => {
-          console.error("Failed to clean up base user:", deleteError);
-        });
-
-      throw webUserError;
     }
-  } catch (e) {
-    console.error("Error in user creation process:", e);
-    if (e instanceof Error) {
-      throw new Error(`Failed to create user: ${e.message}`);
+
+    return null;
+  } catch (error) {
+    // Log the error stack instead of the error object directly
+    if (error instanceof Error) {
+      console.error("Error in user creation process - Stack:", error.stack);
+      throw new Error(`Failed to create user: ${error.message}`);
+    } else {
+      console.error("Unknown error in user creation process");
+      throw new Error("Failed to create user: Unknown error");
     }
-    throw new Error("Failed to create user: Unknown error");
   }
 };
 
@@ -76,12 +63,14 @@ export const getUserByEmail = async (email: string) => {
     });
     return user;
   } catch (error) {
+    // Log the error stack instead of the error object directly
     if (error instanceof Error) {
-      console.error("Error getting user by email:", error.message);
+      console.error("Error in user creation process - Stack:", error.stack);
+      throw new Error(`Failed to create user: ${error.message}`);
     } else {
-      console.error("Unknown error getting user by email");
+      console.error("Unknown error in user creation process");
+      throw new Error("Failed to create user: Unknown error");
     }
-    return null;
   }
 };
 
@@ -95,8 +84,45 @@ export const getUserRoleAndAccountType = async (userId: number) => {
         user_id: true,
       },
     });
-  } catch (e) {
-    console.error(e);
+  } catch (error) {
+    // Log the error stack instead of the error object directly
+    if (error instanceof Error) {
+      console.error("Error in user creation process - Stack:", error.stack);
+      throw new Error(`Failed to create user: ${error.message}`);
+    } else {
+      console.error("Unknown error in user creation process");
+      throw new Error("Failed to create user: Unknown error");
+    }
+    return null;
+  }
+};
+
+export const getUserByWebId = async (userId: number) => {
+  console.log("Getting user by id", userId);
+  try {
+    const user = await db.users.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+    console.log("User found", user);
+    if (!user) return null;
+
+    return {
+      name: user?.name,
+      id: user?.id,
+    };
+  } catch (error) {
+    // Log the error stack instead of the error object directly
+    if (error instanceof Error) {
+      console.error("Error in user creation process - Stack:", error.stack);
+      throw new Error(`Failed to create user: ${error.message}`);
+    } else {
+      console.error("Unknown error in user creation process");
+      throw new Error("Failed to create user: Unknown error");
+    }
     return null;
   }
 };

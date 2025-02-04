@@ -1,3 +1,4 @@
+"use server";
 import db from "@/src/lib/db";
 
 export const getPrompts = async (userId: number) => {
