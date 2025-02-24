@@ -2,13 +2,13 @@ from src.vectorstorage.init_store import get_models_dir
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
-# from langchain_postgres import PGVector
-# from langchain_postgres.vectorstores import PGVector
+
+
 import torch
 import os
-import logging
 import platform
 from src.config import config
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -144,24 +144,31 @@ def get_chromaDB_vectorstore(embedding_function, collection_name):
 
 def get_PGVector_vectorstore(embedding_function, table):
 
-    user = config['vectorstorage']['postgresUser']
-    password = config['vectorstorage']['postgresPassword']
-    host = config['vectorstorage']['postgresHost']
-    port = config['vectorstorage']['postgresPort']
-    db = config['vectorstorage']['postgresVectorDatabase']
+    try:
+        from langchain_postgres import PGVector
+        from langchain_postgres.vectorstores import PGVector
 
-    connection = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db}"  # Uses psycopg3!
+        user = config['vectorstorage']['postgresUser']
+        password = config['vectorstorage']['postgresPassword']
+        host = config['vectorstorage']['postgresHost']
+        port = config['vectorstorage']['postgresPort']
+        db = config['vectorstorage']['postgresVectorDatabase']
 
-    table = config['vectorstorage']['postgresVectorTable']
+        connection = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db}"  # Uses psycopg3!
 
-    vector_store = PGVector(
-        embeddings=embedding_function,
-        collection_name=table,
-        connection=connection,
-        use_jsonb=True,
-    )
+        vector_store = PGVector(
+            embeddings=embedding_function,
+            collection_name=table,
+            connection=connection,
+            use_jsonb=True,
+        )
 
-    return vector_store
+        return vector_store
+    
+    except Exception as e:
+        logger.error(e)
+        logger.error("libpq5 and libpq5-dev are not installed, PostgreSQL will not be supported")
+        return None
 
 def get_vectorstore(
         api_key: str, 
@@ -174,7 +181,7 @@ def get_vectorstore(
         # Get embeddings
         embeddings = None
 
-        # At the moment this maintains the original behavior, changing the configucation does not do anything.
+        # At the moment this maintains the original behavior, changing the configuration does not do anything.
         if use_local_embeddings or api_key is None:
             embeddings = get_embeddings()
         else:
