@@ -141,7 +141,8 @@ regex==2024.11.6
 langchain-openai==0.2.14
 langchain-chroma==0.2.1
 langchain-postgres>=0.0.13
-psycopg[binary,pool]==3.2.5
+psycopg[c,binary,pool]==3.2.5
+SQLAlchemy==2.0.38
 psutil==6.1.1
 ollama==0.4.4
 docx2txt==0.8
