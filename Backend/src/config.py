@@ -35,8 +35,8 @@ _vectorstorage = {
     'postgresPassword': None,
     'postgresHost': 'localhost',
     'postgresPort': 5432,
-    'postgresVectorDatabase': None,
-    'postgresVectorTable': 'vectors',
+    'postgresVectorDatabase': 'embeddings',
+    'postgresVectorTable': 'default',
 
     'embeddingProviders': ['ollama'],    
     'defaultEmbeddingProvider': None,
