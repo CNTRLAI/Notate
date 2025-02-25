@@ -140,6 +140,7 @@ tiktoken==0.8.0
 regex==2024.11.6
 langchain-openai==0.2.14
 langchain-chroma==0.2.1
+pgvector==0.3.6
 langchain-postgres>=0.0.13
 psycopg[c,binary,pool]==3.2.5
 SQLAlchemy==2.0.38
