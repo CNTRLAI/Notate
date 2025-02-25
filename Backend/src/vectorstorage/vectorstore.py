@@ -78,9 +78,11 @@ def get_embeddings(embeddings_provider: str = None, api_key: str = None):
                 raise
     
     elif embeddings_provider == "ollama":
+        ollama_embedding_model = "snowflake-arctic-embed2" # TODO put in config.py
+
         logger.info(f"Using Ollama model: {ollama_embedding_model}")
         embeddings = OllamaEmbeddings(
-            model="snowflake-arctic-embed2" # TODO put in config.py
+            model = ollama_embedding_model
         )
 
     elif embeddings_provider == "OpenAI":
