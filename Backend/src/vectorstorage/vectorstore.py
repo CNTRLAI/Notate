@@ -2,7 +2,7 @@ from src.vectorstorage.init_store import get_models_dir
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
-
+from langchain_ollama import OllamaEmbeddings
 
 import torch
 import os
@@ -79,7 +79,9 @@ def get_embeddings(embeddings_provider: str = None, api_key: str = None):
     
     elif embeddings_provider == "ollama":
         logger.info(f"Using Ollama model: {ollama_embedding_model}")
-        # TODO
+        embeddings = OllamaEmbeddings(
+            model="snowflake-arctic-embed2" # TODO put in config.py
+        )
 
     elif embeddings_provider == "OpenAI":
         logger.info("Using OpenAI embedding model")
@@ -175,17 +177,18 @@ def get_vectorstore(
         collection_name: str, 
         use_local_embeddings: bool = False, 
         local_embedding_model: str = "HIT-TMG/KaLM-embedding-multilingual-mini-instruct-v1.5", # unused, moved to config.py
-        which_vectorstore: str = 'ChromaDB'):
+        which_vectorstore: str = 'ChromaDB',
+        embeddings_provider: str = 'OpenAI'):
 
     try:
         # Get embeddings
         embeddings = None
 
-        # At the moment this maintains the original behavior, changing the config.py does not do anything.
-        if use_local_embeddings or api_key is None:
+        # TODO improve the logic
+        if (use_local_embeddings or api_key is None) and embeddings_provider != 'ollama':
             embeddings = get_embeddings()
         else:
-            embeddings = get_embeddings(embeddings_provider='OpenAI', api_key=api_key)
+            embeddings = get_embeddings(embeddings_provider=embeddings_provider, api_key=api_key)
 
         # Try to create vectorstore with specific settings
         vectorstore = None
