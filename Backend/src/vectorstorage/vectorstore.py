@@ -79,11 +79,11 @@ def get_embeddings(embeddings_provider: str = None, api_key: str = None):
     
     elif embeddings_provider == "ollama":
         logger.info(f"Using Ollama model: {ollama_embedding_model}")
+        # TODO
 
-    elif embeddings_provider == "openAPI":
+    elif embeddings_provider == "OpenAI":
         logger.info("Using OpenAI embedding model")
         embeddings = OpenAIEmbeddings(api_key=api_key)
-
 
     return embeddings
 
@@ -176,19 +176,16 @@ def get_vectorstore(
         use_local_embeddings: bool = False, 
         local_embedding_model: str = "HIT-TMG/KaLM-embedding-multilingual-mini-instruct-v1.5", # unused, moved to config.py
         which_vectorstore: str = 'ChromaDB'):
-    
+
     try:
         # Get embeddings
         embeddings = None
 
-        # At the moment this maintains the original behavior, changing the configuration does not do anything.
+        # At the moment this maintains the original behavior, changing the config.py does not do anything.
         if use_local_embeddings or api_key is None:
             embeddings = get_embeddings()
         else:
-            logger.info("Using OpenAI embedding model")
-            embeddings = OpenAIEmbeddings(api_key=api_key)
-
-        embeddings = get_embeddings(api_key=api_key)
+            embeddings = get_embeddings(embeddings_provider='OpenAI', api_key=api_key)
 
         # Try to create vectorstore with specific settings
         vectorstore = None
