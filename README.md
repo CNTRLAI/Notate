@@ -158,6 +158,10 @@ _MacOS_
 - Debian Package: `Notate/Frontend/dist/Notate.deb`
 - RPM Package: `Notate/Frontend/dist/Notate.rpm`
 
+## Thanks
+
+Special thanks to our #1 beta tester Banks (@scallywag41) for their invaluable contributions and feedback during development.
+
 ## Coming Soon
 
 - [ ] Chrome Extension For Ingesting Webpages/Files
